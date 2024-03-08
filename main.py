@@ -53,14 +53,14 @@ class VisGraphicsView(QGraphicsView):
         self.scale(zoom, zoom)
         
     def mousePressEvent(self, event):
-        self.startX = event.pos().x()
-        self.startY = event.pos().y()
+        self.startX = event.position().x()
+        self.startY = event.position().y()
         self.myScene.wasDragg = False
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        endX = event.pos().x()
-        endY = event.pos().y()
+        endX = event.position().x()
+        endY = event.position().y()
         deltaX = endX - self.startX
         deltaY = endY - self.startY
         distance = math.sqrt(deltaX*deltaX + deltaY*deltaY)
@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
 
     def generateAndMapData(self):
         #Generate random data
-        count = 100;
+        count = 1000;
         x = []
         y = []
         r = []
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     ex = MainWindow()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
