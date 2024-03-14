@@ -1,0 +1,10 @@
+chceme redukovat na 2d
+podobny k sobe nepodobny daleko
+pca nefunguje tsne by mohlo
+chceme hlavne metriku podobnosti na blizkost
+nemusime delat ty nejvetsi, alespon nejake
+tu redukci dimenze musime sami naimplementovat (nemusime implementovat ten vnitrek toho algoritmu), treba to tsne si napsat sami
+pokud budeme mit vice metod, a bude si uzivatel volit, tak staci, kdyz naimplementujeme jednu a zbytek si nekde vezmeme
+muzeme si neco predpocita
+
+vybirani - treba kolecko, co muzu zvetsovat a posouvat a to nam pak rekne neco o tech datech
