@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
                                QMainWindow, QMenuBar, QSizePolicy, QSpinBox,
                                QWidget, QTableWidget, QTableWidgetItem)
 
+from src.doc_table import TableView
 from src.data_utils import DocumentData
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 
@@ -38,8 +39,8 @@ class CentralWidget(QWidget):
         self.view.setBackgroundBrush(QColor(255, 255, 255))
 
         #init subwidget - table
-        self.table = QTableWidget()
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table_view = TableView()
+        self.table = self.table_view.table
 
         #set layout for table right and visualization left
         self.main_layout = QHBoxLayout()
@@ -55,7 +56,7 @@ class CentralWidget(QWidget):
         #right layout
         size.setHorizontalStretch(1)
         self.table.setSizePolicy(size)
-        self.main_layout.addWidget(self.table)
+        self.main_layout.addWidget(self.table_view)
 
         #set the layout to the widget
         self.setLayout(self.main_layout)
