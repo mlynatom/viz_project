@@ -79,13 +79,17 @@ class CentralWidget(QWidget):
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
         #add data
-        self.scene.clear()
-        self.generateAndMapData()
+        self.reload_scene()
 
     def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf", n_components: int = 10, num_topic_words: int = 5):
         self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components)
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
+        self.reload_scene()
+
+    def reload_scene(self):
         self.scene.clear()
+        self.scene.selection = None
+        self.scene.wasDragg = False
         self.generateAndMapData()
 
     def reload_num_topic_words(self, num_topic_words: int = 5):
