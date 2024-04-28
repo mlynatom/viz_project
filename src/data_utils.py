@@ -4,6 +4,7 @@ from typing import List, Literal, Union
 import numpy as np
 from sklearn.decomposition import NMF  # TODO write own
 from sklearn.decomposition import PCA  # TODO write own
+from sklearn.manifold import TSNE
 from sklearn.feature_extraction.text import TfidfTransformer
 
 SEED = 42
@@ -19,6 +20,8 @@ class DocumentData():
     def fit_transform(self, solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]]):
         if solver == "pca":
             return self._pca()
+        elif solver == "tsne":
+            return TSNE(n_components=2, init="random", random_state=SEED).fit_transform(self.tfidf_matrix)
 
 
     def _load_vocabulary(self) -> List[str]:

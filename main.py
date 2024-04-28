@@ -2,6 +2,7 @@ import math
 import random
 import sys
 import numpy as np
+from typing import Union, Literal
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
@@ -9,7 +10,7 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
                                QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget)
+                               QSizePolicy, QWidget,QComboBox)
 
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.data_utils import DocumentData
@@ -70,11 +71,11 @@ class CentralWidget(QWidget):
         self.setLayout(self.main_layout)
 
 
-    def reload_data(self, name:str ="kos"):
+    def reload_data(self, name:str ="kos", dimred:Union[Literal["pca"], Literal["umap"], Literal["tsne"]]="pca"):
         #TODO load all data
         self.scene.clear()
         self.document = DocumentData(data_path="data/bag+of+words", name=name)
-        self.document_coords = self.document.fit_transform("pca")
+        self.document_coords = self.document.fit_transform(dimred)
         self.doc_topic, self.topic = self.document.nmf(n_components=12, num_topic_words=5)
 
         #add data
@@ -142,8 +143,32 @@ class MainWindow(QMainWindow):
 
         #status bar
         self.status_bar = self.statusBar()
-        self.status_bar.showMessage("Ready, to load a file go to File -> Open -> Kos/Nips/Enron/Nytimes/Pubmed", timeout=50000)
+        self.status_bar.showMessage("Ready, to load a file go to File -> Open -> Kos/Nips/Enron/Nytimes/Pubmed", timeout=500000)
 
+        #menu
+        self.init_menu()
+        
+        #toolbar
+        self.init_toolbar()
+
+        #load default file
+        self.loaded_file = None #to remember which file was las loaded
+        self.open_file_action("kos")
+
+        self.show()
+
+    def open_file_action(self, name:str):
+        self.loaded_file = name
+        self.status_bar.showMessage(f"Loading data {name}")
+        self.central_widget.reload_data(name, dimred=self.dimred_literals[self.dimred_combo.currentIndex()])
+        self.status_bar.showMessage(f"Data {name} loaded and plotted")
+
+    def dimred_combo_action(self, index:int):
+        dimred = self.dimred_literals[index]
+        self.central_widget.reload_data(self.loaded_file, dimred)
+        self.status_bar.showMessage(f"Data {self.loaded_file} loaded and plotted with {dimred}")
+
+    def init_menu(self):
         #menu
         self.menu = self.menuBar()
         self.file_menu = self.menu.addMenu("File")
@@ -161,20 +186,24 @@ class MainWindow(QMainWindow):
         self.file_menu_open_nips.triggered.connect(lambda: self.open_file_action("nips"))
         #TODO connect the actions for enron, nytimes, pubmed
 
-
-        #exit qaction
+        #exit action
         self.file_menu.addSeparator()
         exit_action = QAction("Exit", self)
         exit_action.setShortcut(QKeySequence.Quit)
         exit_action.triggered.connect(self.close)
         self.file_menu.addAction(exit_action)
-        
-        self.show()
 
-    def open_file_action(self, name:str):
-        self.status_bar.showMessage(f"Loading data {name}")
-        self.central_widget.reload_data(name)
-        self.status_bar.showMessage(f"Data {name} loaded and plotted")
+    def init_toolbar(self):
+        self.toolbar = self.addToolBar("Toolbar")
+        self.toolbar.setMovable(False)
+        self.toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
+        self.dimred_combo = QComboBox()
+        self.dimred_combo.addItems(["PCA", "UMAP", "t-SNE"])
+        self.dimred_combo.setAccessibleName("Dimensionality Reduction")
+        self.dimred_literals = ["pca", "umap", "tsne"]
+        self.dimred_combo.currentIndexChanged.connect(self.dimred_combo_action)
+        self.dimred_action = self.toolbar.addWidget(self.dimred_combo)
+        
 
 
 if __name__ == "__main__":
