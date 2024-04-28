@@ -10,7 +10,7 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
                                QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget,QComboBox, QSpinBox)
+                               QSizePolicy, QWidget,QComboBox, QSpinBox, QLabel)
 
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.data_utils import DocumentData
@@ -137,6 +137,16 @@ class CentralWidget(QWidget):
             d = 3
             ellipse = self.scene.addEllipse(x[i], y[i], d,d, self.scene.pen, self.brush[c[i]])
 
+class LabeledWidget(QWidget):
+    def __init__(self, label_text, widget):
+        super().__init__()
+        layout = QHBoxLayout()
+        self.label = QLabel(label_text)
+        self.widget = widget
+        layout.addWidget(self.label)
+        layout.addWidget(self.widget)
+        self.setLayout(layout)
+
 
 class MainWindow(QMainWindow):
     """
@@ -209,9 +219,9 @@ class MainWindow(QMainWindow):
         #add alternatives to the menu to let user choose one from kos, nips, enron
         self.file_menu_open_kos = self.file_menu_open.addAction("KOS")
         self.file_menu_open_nips = self.file_menu_open.addAction("NIPS")
-        self.file_menu_open_enron = self.file_menu_open.addAction("Enron")
-        self.file_menu_open_nytimes = self.file_menu_open.addAction("NYTimes")
-        self.file_menu_open_pubmed = self.file_menu_open.addAction("PubMed")
+        # self.file_menu_open_enron = self.file_menu_open.addAction("Enron")
+        # self.file_menu_open_nytimes = self.file_menu_open.addAction("NYTimes")
+        # self.file_menu_open_pubmed = self.file_menu_open.addAction("PubMed")
         #connect the actions for kos and nips
         self.file_menu_open_kos.triggered.connect(lambda: self.open_file_action("kos"))
         self.file_menu_open_nips.triggered.connect(lambda: self.open_file_action("nips"))
@@ -232,38 +242,45 @@ class MainWindow(QMainWindow):
         # self.toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
 
         #dimred combobox
-        self.dimred_combo = QComboBox()
+        self.dimred_combo_label_widget = LabeledWidget("Dimensionality Reduction", QComboBox())
+        self.dimred_combo = self.dimred_combo_label_widget.widget
         self.dimred_combo.addItems(["PCA", "UMAP", "t-SNE"])
         self.dimred_combo.setAccessibleName("Dimensionality Reduction")
         self.dimred_literals = ["pca", "umap", "tsne"]
         self.dimred_combo.currentIndexChanged.connect(self.dimred_combo_action)
-        self.toolbar.addWidget(self.dimred_combo)
+        self.toolbar.addWidget(self.dimred_combo_label_widget)
 
         #topic solver combobox
-        self.topic_combo = QComboBox()
+        self.topic_combo_label_widget = LabeledWidget("Topic Solver", QComboBox())
+        self.topic_combo = self.topic_combo_label_widget.widget
         self.topic_combo.addItems(["NMF", "LDA"])
         self.topic_combo.setAccessibleName("Topic Solver")
         self.topic_literals = ["nmf", "lda"]
         self.topic_combo.currentIndexChanged.connect(self.topic_combo_action)
-        self.toolbar.addWidget(self.topic_combo)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.topic_combo_label_widget)
 
         #spinbox for number of topics
-        self.num_topics_spinbox = QSpinBox()
+        self.num_topics_spinbox_label = LabeledWidget("Number of Topics", QSpinBox())
+        self.num_topics_spinbox = self.num_topics_spinbox_label.widget
         self.num_topics_spinbox.setAccessibleName("Number of Topics")
         self.num_topics_spinbox.setMinimum(1)
         self.num_topics_spinbox.setMaximum(12)
         self.num_topics_spinbox.setValue(10)
         self.num_topics_spinbox.valueChanged.connect(self.topic_num_topics_action)
-        self.toolbar.addWidget(self.num_topics_spinbox)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.num_topics_spinbox_label)
 
         #spinbox for number of topic words
-        self.num_topic_words_spinbox = QSpinBox()
+        self.num_topic_words_spinbox_label = LabeledWidget("Number of Topic Words", QSpinBox())
+        self.num_topic_words_spinbox = self.num_topic_words_spinbox_label.widget
         self.num_topic_words_spinbox.setAccessibleName("Number of Topic Words")
         self.num_topic_words_spinbox.setMinimum(1)
         self.num_topic_words_spinbox.setMaximum(10)
         self.num_topic_words_spinbox.setValue(5)
         self.num_topic_words_spinbox.valueChanged.connect(self.topic_num_topic_words_action)
-        self.toolbar.addWidget(self.num_topic_words_spinbox)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.num_topic_words_spinbox_label)
 
         
 
