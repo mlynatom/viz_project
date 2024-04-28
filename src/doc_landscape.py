@@ -24,6 +24,7 @@ class VisGraphicsScene(QGraphicsScene):
             return
         if(self.selection):
             self.selection.setPen(self.pen)
+            self.selection = None
         item = self.itemAt(event.scenePos(), QTransform())
         if(item):
             item.setPen(self.pen_selected)
