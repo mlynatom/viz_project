@@ -17,7 +17,7 @@ class VisGraphicsScene(QGraphicsScene):
         self.selection = None
         self.wasDragg = False
         self.pen = QPen(Qt.black)
-        self.selected = QPen(Qt.red)
+        self.pen_selected = QPen(Qt.red)
 
     def mouseReleaseEvent(self, event): 
         if(self.wasDragg):
@@ -26,7 +26,7 @@ class VisGraphicsScene(QGraphicsScene):
             self.selection.setPen(self.pen)
         item = self.itemAt(event.scenePos(), QTransform())
         if(item):
-            item.setPen(self.selected)
+            item.setPen(self.pen_selected)
             self.selection = item
 
 
