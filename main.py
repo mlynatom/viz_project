@@ -14,40 +14,6 @@ from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.data_utils import DocumentData
 
-
-class MainWindow(QMainWindow):
-    """
-    The main window of the application.
-    """
-    def __init__(self, central_widget: QWidget):
-        super(MainWindow, self).__init__()
-        self.setWindowTitle('Document Corpus Visualization')
-
-        #window dimensions
-        geometry = self.screen().availableGeometry()
-        #self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumSize(geometry.width() * 0.5, geometry.height() * 0.4)
-      
-        #set central widget
-        self.setCentralWidget(central_widget)
-
-        #menu
-        self.menu = self.menuBar()
-        self.file_menu = self.menu.addMenu("File")
-
-        #exit qaction
-        exit_action = QAction("Exit", self)
-        exit_action.setShortcut(QKeySequence.Quit)
-        exit_action.triggered.connect(self.close)
-        self.file_menu.addAction(exit_action)
-
-        #status bar
-        self.status_bar = self.statusBar()
-        self.status_bar.showMessage("Data loaded and plotted")
-
-        
-        self.show()
-
 class CentralWidget(QWidget):
     """
     Class for holding the central widget of our application.
@@ -70,14 +36,6 @@ class CentralWidget(QWidget):
         self.view.setViewport(gl)
         self.view.setBackgroundBrush(QColor(255, 255, 255))
 
-        #TODO load all data
-        self.document = DocumentData(data_path="data/bag+of+words", name="kos")
-        self.document_coords = self.document.fit_transform("pca")
-        self.doc_topic, self.topic = self.document.nmf(n_components=12, num_topic_words=5)
-
-        #add data
-        self.generateAndMapData()
-
         #init subwidget TODO change to table
         self.scene2 = VisGraphicsScene()
         
@@ -91,9 +49,6 @@ class CentralWidget(QWidget):
         self.view2 = VisGraphicsView(self.scene2, self)
         self.view2.setViewport(gl2)
         self.view2.setBackgroundBrush(QColor(255, 255, 255))
-
-        #add data
-        #self.generateAndMapData()
         
         #set layout for table right and visualization left
         self.main_layout = QHBoxLayout()
@@ -114,6 +69,17 @@ class CentralWidget(QWidget):
         #set the layout to the widget
         self.setLayout(self.main_layout)
 
+
+    def reload_data(self, name:str ="kos"):
+        #TODO load all data
+        self.scene.clear()
+        self.document = DocumentData(data_path="data/bag+of+words", name=name)
+        self.document_coords = self.document.fit_transform("pca")
+        self.doc_topic, self.topic = self.document.nmf(n_components=12, num_topic_words=5)
+
+        #add data
+        self.generateAndMapData()
+
     def generateAndMapData(self):
         #Generate random data
         # count = 100
@@ -131,11 +97,6 @@ class CentralWidget(QWidget):
         # for i in range(0, count):
         #     d = 2*r[i]
         #     ellipse = self.scene.addEllipse(x[i], y[i], d, d, self.scene.pen, self.brush[c[i]])
-        
-        width = self.scene.width()
-        height = self.scene.height()
-        print(width)
-        print(height)
 
         #Generate random data
         #remap the result of pca to the screen
@@ -149,7 +110,7 @@ class CentralWidget(QWidget):
         x_min_max_scaled = (x - x_min) / (x_max - x_min)
         y_min_max_scaled = (y - y_min) / (y_max - y_min)
 
-        #rescale minmaxed to the screen
+        #rescale minmaxed to the screen TODO better alignment with the space!
         width = 800
         height = 600
         x = x_min_max_scaled * width
@@ -160,6 +121,61 @@ class CentralWidget(QWidget):
         for i in range(0, x.shape[0]):
             d = 3
             ellipse = self.scene.addEllipse(x[i], y[i], d,d, self.scene.pen, self.brush[c[i]])
+
+
+class MainWindow(QMainWindow):
+    """
+    The main window of the application.
+    """
+    def __init__(self, central_widget: CentralWidget):
+        super(MainWindow, self).__init__()
+        self.setWindowTitle('Document Corpus Visualization')
+
+        #window dimensions
+        geometry = self.screen().availableGeometry()
+        #self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
+        self.setMinimumSize(geometry.width() * 0.5, geometry.height() * 0.4)
+      
+        #set central widget
+        self.central_widget = central_widget
+        self.setCentralWidget(self.central_widget)
+
+        #status bar
+        self.status_bar = self.statusBar()
+        self.status_bar.showMessage("Ready, to load a file go to File -> Open -> Kos/Nips/Enron/Nytimes/Pubmed", timeout=50000)
+
+        #menu
+        self.menu = self.menuBar()
+        self.file_menu = self.menu.addMenu("File")
+
+        #open menu
+        self.file_menu_open = self.file_menu.addMenu("Load Dataset")
+        #add alternatives to the menu to let user choose one from kos, nips, enron
+        self.file_menu_open_kos = self.file_menu_open.addAction("KOS")
+        self.file_menu_open_nips = self.file_menu_open.addAction("NIPS")
+        self.file_menu_open_enron = self.file_menu_open.addAction("Enron")
+        self.file_menu_open_nytimes = self.file_menu_open.addAction("NYTimes")
+        self.file_menu_open_pubmed = self.file_menu_open.addAction("PubMed")
+        #connect the actions for kos and nips
+        self.file_menu_open_kos.triggered.connect(lambda: self.open_file_action("kos"))
+        self.file_menu_open_nips.triggered.connect(lambda: self.open_file_action("nips"))
+        #TODO connect the actions for enron, nytimes, pubmed
+
+
+        #exit qaction
+        self.file_menu.addSeparator()
+        exit_action = QAction("Exit", self)
+        exit_action.setShortcut(QKeySequence.Quit)
+        exit_action.triggered.connect(self.close)
+        self.file_menu.addAction(exit_action)
+        
+        self.show()
+
+    def open_file_action(self, name:str):
+        self.status_bar.showMessage(f"Loading data {name}")
+        self.central_widget.reload_data(name)
+        self.status_bar.showMessage(f"Data {name} loaded and plotted")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
