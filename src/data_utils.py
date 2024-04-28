@@ -12,6 +12,9 @@ from umap import UMAP
 SEED = 42
 
 class DocumentData():
+    """
+    Class to load and process the data from the document files
+    """
     def __init__(self, data_path:str, name:str) -> None:
         self.name = name
         self.vocab_path = os.path.join(data_path, f"vocab.{self.name}.txt")
@@ -21,6 +24,9 @@ class DocumentData():
         self.tfidf_matrix = TfidfTransformer().fit_transform(self.doc_words_matrix)
         
     def fit_transform(self, solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]]):
+        """
+        Fit and transform the data using the specified solver
+        """
         if solver == "pca":
             try:
                 pca_res = np.load(f"./precomputed/{self.name}_pca.npy")
@@ -28,7 +34,7 @@ class DocumentData():
                 pca_res = self._pca()
                 #np.save(f"./precomputed/{self.name}_pca.npy", pca_res) #we do not need to precompute PCA
 
-            return self._pca()
+            return pca_res
         elif solver == "tsne":
             try:
                 tsne_res = np.load(f"./precomputed/{self.name}_tsne.npy")
@@ -49,6 +55,9 @@ class DocumentData():
             raise ValueError("Invalid solver")
         
     def fit_topics(self, solver: Union[Literal["nmf"], Literal["lda"]], n_components:int = 10):
+        """
+        Fit the topics using the specified solver
+        """
         if solver == "nmf":
             try:
                 doc_topics = np.load(f"./precomputed/{self.name}_nmf_{n_components}_doc_topics.npy")
@@ -115,6 +124,9 @@ class DocumentData():
         return topics, lda.components_
 
     def get_topics_words(self, topic_words_matrix, n:int = 5) -> List[List[str]]:
+        """
+        Get the top n words for each topic which are the most representative
+        """
         topics_words = []
 
         for i in range(topic_words_matrix.shape[0]):

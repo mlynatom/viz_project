@@ -1,19 +1,19 @@
-import math
-import random
 import sys
-import numpy as np
-from typing import Union, Literal
+from typing import Literal, Union
 
+import numpy as np
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
                            QPen, QSurfaceFormat, QTransform)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
-                               QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget,QComboBox, QSpinBox, QLabel)
+from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
+                               QGraphicsView, QHBoxLayout, QHeaderView, QLabel,
+                               QMainWindow, QMenuBar, QSizePolicy, QSpinBox,
+                               QWidget)
 
-from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.data_utils import DocumentData
+from src.doc_landscape import VisGraphicsScene, VisGraphicsView
+
 
 class CentralWidget(QWidget):
     """
