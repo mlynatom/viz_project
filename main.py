@@ -72,19 +72,24 @@ class CentralWidget(QWidget):
 
 
     def reload_data(self, name:str ="kos", dimred_solver:Union[Literal["pca"], Literal["umap"], Literal["tsne"]]="pca", topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf",n_components:int = 10, num_topic_words: int = 5):
-        #TODO load all data
+        #load all data
         self.document = DocumentData(data_path="data/bag+of+words", name=name)
         self.document_coords = self.document.fit_transform(dimred_solver)
-        self.doc_topic, self.topic = self.document.fit_topics(solver=topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+        self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+        self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
         #add data
         self.scene.clear()
         self.generateAndMapData()
 
     def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf", n_components: int = 10, num_topic_words: int = 5):
-        self.doc_topic, self.topic = self.document.fit_topics(topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+        self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+        self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
         self.scene.clear()
         self.generateAndMapData()
+
+    def reload_num_topic_words(self, num_topic_words: int = 5):
+        self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
     def generateAndMapData(self):
         #Generate random data
@@ -186,9 +191,8 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(f"Topics computed for {value} topics")
 
     def topic_num_topic_words_action(self, value:int):
-        #TODO not needed to reload the topics (just argmax the topics again)
-        self.central_widget.reload_topics(topic_solver=self.topic_literals[self.topic_combo.currentIndex()], n_components=self.num_topics_spinbox.value(), num_topic_words=value)
-        self.status_bar.showMessage(f"Topics computed for {value} topic words")
+        self.central_widget.reload_num_topic_words(num_topic_words=value)
+        self.status_bar.showMessage(f"Topic words recomputed for {value} topic words")
 
     def init_menu(self):
         #menu
@@ -206,7 +210,9 @@ class MainWindow(QMainWindow):
         #connect the actions for kos and nips
         self.file_menu_open_kos.triggered.connect(lambda: self.open_file_action("kos"))
         self.file_menu_open_nips.triggered.connect(lambda: self.open_file_action("nips"))
-        #TODO connect the actions for enron, nytimes, pubmed
+        self.file_menu_open_enron.triggered.connect(lambda: self.open_file_action("enron"))
+        self.file_menu_open_nytimes.triggered.connect(lambda: self.open_file_action("nytimes"))
+        self.file_menu_open_pubmed.triggered.connect(lambda: self.open_file_action("pubmed"))
 
         #exit action
         self.file_menu.addSeparator()

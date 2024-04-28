@@ -71,20 +71,17 @@ class DocumentData():
         H_matrix = nmf.components_ # topics X words matrix
 
         topics = np.argmax(W_matrix, axis=1)
-        topics_words = self._get_topics_words(H_matrix, num_topic_words)
 
-        return topics, topics_words
+        return topics, H_matrix
     
     def _lda(self, n_components:int = 10, num_topic_words: int = 5):
         lda = LatentDirichletAllocation(n_components=n_components, random_state=SEED)
         X_new = lda.fit_transform(self.doc_words_matrix)
         topics = np.argmax(X_new, axis=1)
 
-        topics_words = self._get_topics_words(lda.components_, num_topic_words)
+        return topics, lda.components_
 
-        return topics, topics_words
-
-    def _get_topics_words(self, topic_words_matrix, n:int = 5) -> List[List[str]]:
+    def get_topics_words(self, topic_words_matrix, n:int = 5) -> List[List[str]]:
         topics_words = []
 
         for i in range(topic_words_matrix.shape[0]):
