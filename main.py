@@ -9,7 +9,7 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
                                QGraphicsView, QHBoxLayout, QHeaderView, QLabel,
                                QMainWindow, QMenuBar, QSizePolicy, QSpinBox,
-                               QWidget)
+                               QWidget, QTableWidget, QTableWidgetItem)
 
 from src.data_utils import DocumentData
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
@@ -22,7 +22,7 @@ class CentralWidget(QWidget):
     def __init__(self) -> None:
         QWidget.__init__(self)
 
-        #init subwidget
+        #init subwidget - scene
         self.scene = VisGraphicsScene()
         self.brush = [QBrush(Qt.yellow), QBrush(Qt.green), QBrush(Qt.blue), QBrush(Qt.red), QBrush(Qt.cyan), QBrush(Qt.magenta), QBrush(Qt.gray), QBrush(Qt.darkYellow), QBrush(Qt.darkGreen), QBrush(Qt.darkBlue), QBrush(Qt.darkRed), QBrush(Qt.darkCyan)]
         
@@ -37,20 +37,10 @@ class CentralWidget(QWidget):
         self.view.setViewport(gl)
         self.view.setBackgroundBrush(QColor(255, 255, 255))
 
-        #init subwidget TODO change to table
-        self.scene2 = VisGraphicsScene()
-        
-        format2 = QSurfaceFormat()
-        format2.setSamples(4)
-        
-        gl2 = QOpenGLWidget()
-        gl2.setFormat(format2)
-        gl2.setAutoFillBackground(True)
-        
-        self.view2 = VisGraphicsView(self.scene2, self)
-        self.view2.setViewport(gl2)
-        self.view2.setBackgroundBrush(QColor(255, 255, 255))
-        
+        #init subwidget - table
+        self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+
         #set layout for table right and visualization left
         self.main_layout = QHBoxLayout()
         size = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -64,8 +54,8 @@ class CentralWidget(QWidget):
 
         #right layout
         size.setHorizontalStretch(1)
-        self.view2.setSizePolicy(size)
-        self.main_layout.addWidget(self.view2)
+        self.table.setSizePolicy(size)
+        self.main_layout.addWidget(self.table)
 
         #set the layout to the widget
         self.setLayout(self.main_layout)
@@ -96,25 +86,7 @@ class CentralWidget(QWidget):
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
     def generateAndMapData(self):
-        #Generate random data
-        # count = 100
-        # x = []
-        # y = []
-        # r = []
-        # c = []
-        # for i in range(0, count):
-        #     x.append(random.random()*600)
-        #     y.append(random.random()*400)
-        #     r.append(random.random()*50)
-        #     c.append(random.randint(0, 2))
-
-        # #Map data to graphical elements
-        # for i in range(0, count):
-        #     d = 2*r[i]
-        #     ellipse = self.scene.addEllipse(x[i], y[i], d, d, self.scene.pen, self.brush[c[i]])
-
-        #Generate random data
-        #remap the result of pca to the screen
+        #remap the results to the screen
         x = self.document_coords[:, 0]
         y = self.document_coords[:, 1]
         x_min = np.min(x)
@@ -136,6 +108,28 @@ class CentralWidget(QWidget):
         for i in range(0, x.shape[0]):
             d = 3
             ellipse = self.scene.addEllipse(x[i], y[i], d,d, self.scene.pen, self.brush[c[i]])
+
+    def generateTable(self):
+        self.table.clear()
+        self.table.setRowCount(self.doc_topic.shape[0])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Doc ID", "Topic ID", "Topic Colour"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.verticalHeader().setVisible(False)
+
+        for i, topic in enumerate(self.doc_topic):
+            item_id = QTableWidgetItem(str(i))
+            item_topic_id = QTableWidgetItem(str(topic))
+            item_topic_colour = QTableWidgetItem()
+            item_topic_colour.setBackground(self.brush[topic])
+            self.table.setItem(i, 0, item_id)
+            self.table.setItem(i, 1, item_topic_id)
+            self.table.setItem(i, 2, item_topic_colour)
+            #TODO link cell double_clicked to the wordclouds
+
+        #TODO sorting by compass
+        self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+        self.table.resizeColumnsToContents()
 
 class LabeledWidget(QWidget):
     def __init__(self, label_text, widget):
@@ -187,6 +181,7 @@ class MainWindow(QMainWindow):
         self.central_widget.reload_data(name, dimred_solver=self.dimred_literals[self.dimred_combo.currentIndex()], 
                                         topic_solver=self.topic_literals[self.topic_combo.currentIndex()], 
                                         n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
+        self.central_widget.generateTable()
         self.status_bar.showMessage(f"Data {name} loaded and plotted")
         self.setWindowTitle(f'Document Corpus Visualization - dataset: {name}')
 
