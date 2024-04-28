@@ -10,7 +10,7 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
                                QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget,QComboBox)
+                               QSizePolicy, QWidget,QComboBox, QSpinBox)
 
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.data_utils import DocumentData
@@ -71,14 +71,19 @@ class CentralWidget(QWidget):
         self.setLayout(self.main_layout)
 
 
-    def reload_data(self, name:str ="kos", dimred:Union[Literal["pca"], Literal["umap"], Literal["tsne"]]="pca"):
+    def reload_data(self, name:str ="kos", dimred_solver:Union[Literal["pca"], Literal["umap"], Literal["tsne"]]="pca", topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf",n_components:int = 10, num_topic_words: int = 5):
         #TODO load all data
-        self.scene.clear()
         self.document = DocumentData(data_path="data/bag+of+words", name=name)
-        self.document_coords = self.document.fit_transform(dimred)
-        self.doc_topic, self.topic = self.document.nmf(n_components=12, num_topic_words=5)
+        self.document_coords = self.document.fit_transform(dimred_solver)
+        self.doc_topic, self.topic = self.document.fit_topics(solver=topic_solver, n_components=n_components, num_topic_words=num_topic_words)
 
         #add data
+        self.scene.clear()
+        self.generateAndMapData()
+
+    def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf", n_components: int = 10, num_topic_words: int = 5):
+        self.doc_topic, self.topic = self.document.fit_topics(topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+        self.scene.clear()
         self.generateAndMapData()
 
     def generateAndMapData(self):
@@ -160,13 +165,30 @@ class MainWindow(QMainWindow):
     def open_file_action(self, name:str):
         self.loaded_file = name
         self.status_bar.showMessage(f"Loading data {name}")
-        self.central_widget.reload_data(name, dimred=self.dimred_literals[self.dimred_combo.currentIndex()])
+        self.central_widget.reload_data(name, dimred_solver=self.dimred_literals[self.dimred_combo.currentIndex()], 
+                                        topic_solver=self.topic_literals[self.topic_combo.currentIndex()], 
+                                        n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
         self.status_bar.showMessage(f"Data {name} loaded and plotted")
 
     def dimred_combo_action(self, index:int):
         dimred = self.dimred_literals[index]
-        self.central_widget.reload_data(self.loaded_file, dimred)
+        self.central_widget.reload_data(self.loaded_file, dimred, topic_solver=self.topic_literals[self.topic_combo.currentIndex()], 
+                                        n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
         self.status_bar.showMessage(f"Data {self.loaded_file} loaded and plotted with {dimred}")
+
+    def topic_combo_action(self, index:int):
+        topic_solver = self.topic_literals[index]
+        self.central_widget.reload_topics(topic_solver=topic_solver, n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
+        self.status_bar.showMessage(f"Topics computed with {topic_solver}")
+
+    def topic_num_topics_action(self, value:int):
+        self.central_widget.reload_topics(topic_solver=self.topic_literals[self.topic_combo.currentIndex()], n_components=value, num_topic_words=self.num_topic_words_spinbox.value())
+        self.status_bar.showMessage(f"Topics computed for {value} topics")
+
+    def topic_num_topic_words_action(self, value:int):
+        #TODO not needed to reload the topics (just argmax the topics again)
+        self.central_widget.reload_topics(topic_solver=self.topic_literals[self.topic_combo.currentIndex()], n_components=self.num_topics_spinbox.value(), num_topic_words=value)
+        self.status_bar.showMessage(f"Topics computed for {value} topic words")
 
     def init_menu(self):
         #menu
@@ -195,14 +217,43 @@ class MainWindow(QMainWindow):
 
     def init_toolbar(self):
         self.toolbar = self.addToolBar("Toolbar")
-        self.toolbar.setMovable(False)
-        self.toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
+        # self.toolbar.setMovable(False)
+        # self.toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
+
+        #dimred combobox
         self.dimred_combo = QComboBox()
         self.dimred_combo.addItems(["PCA", "UMAP", "t-SNE"])
         self.dimred_combo.setAccessibleName("Dimensionality Reduction")
         self.dimred_literals = ["pca", "umap", "tsne"]
         self.dimred_combo.currentIndexChanged.connect(self.dimred_combo_action)
-        self.dimred_action = self.toolbar.addWidget(self.dimred_combo)
+        self.toolbar.addWidget(self.dimred_combo)
+
+        #topic solver combobox
+        self.topic_combo = QComboBox()
+        self.topic_combo.addItems(["NMF", "LDA"])
+        self.topic_combo.setAccessibleName("Topic Solver")
+        self.topic_literals = ["nmf", "lda"]
+        self.topic_combo.currentIndexChanged.connect(self.topic_combo_action)
+        self.toolbar.addWidget(self.topic_combo)
+
+        #spinbox for number of topics
+        self.num_topics_spinbox = QSpinBox()
+        self.num_topics_spinbox.setAccessibleName("Number of Topics")
+        self.num_topics_spinbox.setMinimum(1)
+        self.num_topics_spinbox.setMaximum(12)
+        self.num_topics_spinbox.setValue(10)
+        self.num_topics_spinbox.valueChanged.connect(self.topic_num_topics_action)
+        self.toolbar.addWidget(self.num_topics_spinbox)
+
+        #spinbox for number of topic words
+        self.num_topic_words_spinbox = QSpinBox()
+        self.num_topic_words_spinbox.setAccessibleName("Number of Topic Words")
+        self.num_topic_words_spinbox.setMinimum(1)
+        self.num_topic_words_spinbox.setMaximum(10)
+        self.num_topic_words_spinbox.setValue(5)
+        self.num_topic_words_spinbox.valueChanged.connect(self.topic_num_topic_words_action)
+        self.toolbar.addWidget(self.num_topic_words_spinbox)
+
         
 
 

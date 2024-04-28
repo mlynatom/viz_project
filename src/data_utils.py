@@ -6,6 +6,7 @@ from sklearn.decomposition import NMF  # TODO write own
 from sklearn.decomposition import PCA  # TODO write own
 from sklearn.manifold import TSNE
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.decomposition import LatentDirichletAllocation
 
 SEED = 42
 
@@ -22,6 +23,19 @@ class DocumentData():
             return self._pca()
         elif solver == "tsne":
             return TSNE(n_components=2, init="random", random_state=SEED).fit_transform(self.tfidf_matrix)
+        elif solver == "umap":
+            #TODO
+            raise NotImplementedError("UMAP not implemented yet")
+        else:
+            raise ValueError("Invalid solver")
+        
+    def fit_topics(self, solver: Union[Literal["nmf"], Literal["lda"]], n_components:int = 10, num_topic_words: int = 5):
+        if solver == "nmf":
+            return self._nmf(n_components=n_components, num_topic_words=num_topic_words)
+        elif solver == "lda":
+            return self._lda(n_components=n_components, num_topic_words=num_topic_words)
+        else:
+            raise ValueError("Invalid solver")
 
 
     def _load_vocabulary(self) -> List[str]:
@@ -51,15 +65,24 @@ class DocumentData():
         pca = PCA(n_components=2, svd_solver="arpack")
         return pca.fit_transform(self.tfidf_matrix)
     
-    def nmf(self, n_components:int = 10, num_topic_words: int = 5):
+    def _nmf(self, n_components:int = 10, num_topic_words: int = 5):
         nmf = NMF(n_components=n_components, random_state=SEED)
         W_matrix = nmf.fit_transform(self.tfidf_matrix) # document X topics matrix
         H_matrix = nmf.components_ # topics X words matrix
 
-        topics_nmf = np.argmax(W_matrix, axis=1)
+        topics = np.argmax(W_matrix, axis=1)
         topics_words = self._get_topics_words(H_matrix, num_topic_words)
 
-        return topics_nmf, topics_words
+        return topics, topics_words
+    
+    def _lda(self, n_components:int = 10, num_topic_words: int = 5):
+        lda = LatentDirichletAllocation(n_components=n_components, random_state=SEED)
+        X_new = lda.fit_transform(self.doc_words_matrix)
+        topics = np.argmax(X_new, axis=1)
+
+        topics_words = self._get_topics_words(lda.components_, num_topic_words)
+
+        return topics, topics_words
 
     def _get_topics_words(self, topic_words_matrix, n:int = 5) -> List[List[str]]:
         topics_words = []
