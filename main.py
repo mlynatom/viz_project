@@ -9,7 +9,7 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
                                QGraphicsView, QHBoxLayout, QHeaderView, QLabel,
                                QMainWindow, QMenuBar, QSizePolicy, QSpinBox,
-                               QWidget, QTableWidget, QTableWidgetItem)
+                               QWidget, QTableWidget, QTableWidgetItem, QGraphicsEllipseItem)
 
 from src.doc_table import TableView
 from src.data_utils import DocumentData
@@ -72,7 +72,7 @@ class CentralWidget(QWidget):
         #add data
         self.reload_scene()
 
-    def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf", n_components: int = 10, num_topic_words: int = 5):
+    def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = 'nmf', n_components: int = 10, num_topic_words: int = 5):
         self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components)
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
         self.reload_scene()
@@ -81,34 +81,11 @@ class CentralWidget(QWidget):
         self.scene.clear()
         self.scene.selection = None
         self.scene.wasDragg = False
-        self.generateAndMapData()
+        self.scene.generateAndMapData(self.document_coords, self.doc_topic, self.brush)
 
     def reload_num_topic_words(self, num_topic_words: int = 5):
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
-    def generateAndMapData(self):
-        #remap the results to the screen
-        x = self.document_coords[:, 0]
-        y = self.document_coords[:, 1]
-        x_min = np.min(x)
-        x_max = np.max(x)
-        y_min = np.min(y)
-        y_max = np.max(y)
-
-        x_min_max_scaled = (x - x_min) / (x_max - x_min)
-        y_min_max_scaled = (y - y_min) / (y_max - y_min)
-
-        #rescale minmaxed to the screen TODO better alignment with the space!
-        width = 800
-        height = 600
-        x = x_min_max_scaled * width
-        y = y_min_max_scaled * height
-        c = self.doc_topic #get colors
-
-        #Map data to graphical elements
-        for i in range(0, x.shape[0]):
-            d = 3
-            ellipse = self.scene.addEllipse(x[i], y[i], d,d, self.scene.pen, self.brush[c[i]])
 
     def generateTable(self):
         self.table.clear()

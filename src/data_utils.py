@@ -2,7 +2,7 @@ import os
 from typing import List, Literal, Union
 
 import numpy as np
-from sklearn.decomposition import NMF  # TODO write own
+from sklearn.decomposition import NMF
 from sklearn.decomposition import PCA  # TODO write own
 from sklearn.manifold import TSNE
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -104,6 +104,7 @@ class DocumentData():
         return counts_matrix
     
     def _pca(self):
+        #TODO write own
         pca = PCA(n_components=2, svd_solver="arpack")
         return pca.fit_transform(self.tfidf_matrix)
     
