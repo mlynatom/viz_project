@@ -1,18 +1,36 @@
 import math
-from pkgutil import iter_modules
-import random
-import sys
-import numpy as np
 
-from PySide6.QtCore import QSize, Qt
+import numpy as np
+from PySide6.QtCore import QRectF, QSize, Qt, Signal, QObject
 from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
                            QPen, QSurfaceFormat, QTransform)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
+from PySide6.QtWidgets import (QApplication, QGraphicsEllipseItem,
+                               QGraphicsItem, QGraphicsScene, QGraphicsView,
                                QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget, QGraphicsEllipseItem, QGraphicsItem)
-from PySide6.QtCore import Qt, QRectF, Signal
+                               QSizePolicy, QWidget)
+
+class Compass(QGraphicsEllipseItem, QObject):
+    #define signal for position change
+    positionChanged = Signal()
+
+    def __init__(self, *args, **kwargs) -> None:
+        QGraphicsEllipseItem.__init__(self, *args, **kwargs)
+        QObject.__init__(self)
     
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange:
+            self.positionChanged.emit() #emit signal when position changes
+
+        return super().itemChange(change, value)
+
+    
+
+class Document(QGraphicsEllipseItem):
+    def __init__(self, id, *args, **kwargs):
+        QGraphicsEllipseItem.__init__(self, *args, **kwargs)
+        self.id = id
+
 class VisGraphicsScene(QGraphicsScene):
     def __init__(self):
         super(VisGraphicsScene, self).__init__()
@@ -22,8 +40,8 @@ class VisGraphicsScene(QGraphicsScene):
         self.pen_docs_selected = QPen(Qt.red,0.5)
         self.pen_compass = QPen(Qt.black, 2)
         self.compass = None
-        self.selected_docs = [] #TODO store selected documents
-        self.doc_elipses = [] #store elipses of documents
+        self.selected_docs = [] #store selected documents
+        self.elipse2id = {} #store mapping from elipse to document id
 
     def mouseReleaseEvent(self, event): 
         if(self.wasDragg):
@@ -34,7 +52,8 @@ class VisGraphicsScene(QGraphicsScene):
         #check what was clicked
         item = self.itemAt(event.scenePos(), QTransform())
         if item is self.compass:
-            print("Compass clicked")
+            pass
+            # print("Compass clicked")
         elif(item):
             item.setPen(self.pen_docs_selected)
             self.selection = item
@@ -63,31 +82,35 @@ class VisGraphicsScene(QGraphicsScene):
         for i in range(0, x.shape[0]):
             d = 3
             ellipse = self.addEllipse(x[i], y[i], d,d, self.pen_docs, brush[c[i]])
-            self.doc_elipses.append(ellipse)
+            self.elipse2id[ellipse] = i
 
         #TODO add the compass (ellipse with transparent background)
         self.init_compass(width, height)
 
-    def get_ellipses_inside_compass(self):
+    def get_ellipses_ids_inside_compass(self):
         #TODO not working?
         ellipses_inside_area = []
-        target_rect = self.compass.boundingRect()
+        target_rect = self.compass.sceneBoundingRect()
 
         for item in self.items():
             if isinstance(item, QGraphicsEllipseItem) and item != self.compass:
-                item_rect = item.boundingRect()
+                item_rect = item.sceneBoundingRect()
                 if target_rect.contains(item_rect):
-                    ellipses_inside_area.append(item)
+                    ellipses_inside_area.append(self.elipse2id[item])
+
+        # print(ellipses_inside_area)
 
         return ellipses_inside_area
 
 
     def init_compass(self, w, h):
-        self.compass = QGraphicsEllipseItem(w/2,h/2,50,50)
+        self.compass = Compass(w/2,h/2,50,50)
         self.compass.setBrush(QColor(0, 0, 0, 0))
         self.compass.setPen(self.pen_compass)
         self.compass.setFlag(QGraphicsEllipseItem.ItemIsMovable, True) #set that this item can be moved
         self.compass.setFlag(QGraphicsEllipseItem.ItemSendsGeometryChanges, True)
+        self.compass.positionChanged.connect(self.get_ellipses_ids_inside_compass)
+
         self.addItem(self.compass)
             
 
