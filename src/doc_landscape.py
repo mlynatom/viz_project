@@ -32,6 +32,9 @@ class Document(QGraphicsEllipseItem):
         self.id = id
 
 class VisGraphicsScene(QGraphicsScene):
+    #define signal for selection change
+    selectionChanged = Signal()
+
     def __init__(self):
         super(VisGraphicsScene, self).__init__()
         self.selection = None
@@ -98,9 +101,12 @@ class VisGraphicsScene(QGraphicsScene):
                 if target_rect.contains(item_rect):
                     ellipses_inside_area.append(self.elipse2id[item])
 
-        # print(ellipses_inside_area)
+        if ellipses_inside_area != self.selected_docs:
+            self.selected_docs = ellipses_inside_area
+            self.selectionChanged.emit()
 
-        return ellipses_inside_area
+            
+        
 
 
     def init_compass(self, w, h):
@@ -110,7 +116,6 @@ class VisGraphicsScene(QGraphicsScene):
         self.compass.setFlag(QGraphicsEllipseItem.ItemIsMovable, True) #set that this item can be moved
         self.compass.setFlag(QGraphicsEllipseItem.ItemSendsGeometryChanges, True)
         self.compass.positionChanged.connect(self.get_ellipses_ids_inside_compass)
-
         self.addItem(self.compass)
             
 

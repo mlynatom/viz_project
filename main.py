@@ -1,3 +1,4 @@
+from pydoc import doc
 import sys
 from typing import Literal, Union
 
@@ -25,6 +26,7 @@ class CentralWidget(QWidget):
 
         #init subwidget - scene
         self.scene = VisGraphicsScene()
+        self.scene.selectionChanged.connect(self.generateTable) #connect selection change to table update
         self.brush = [QBrush(Qt.yellow), QBrush(Qt.green), QBrush(Qt.blue), QBrush(Qt.red), QBrush(Qt.cyan), QBrush(Qt.magenta), QBrush(Qt.gray), QBrush(Qt.darkYellow), QBrush(Qt.darkGreen), QBrush(Qt.darkBlue), QBrush(Qt.darkRed), QBrush(Qt.darkCyan)]
         
         format = QSurfaceFormat()
@@ -41,6 +43,7 @@ class CentralWidget(QWidget):
         #init subwidget - table
         self.table_view = TableView()
         self.table = self.table_view.table
+        self.table.setSelectionMode(QTableWidget.NoSelection)
 
         #set layout for table right and visualization left
         self.main_layout = QHBoxLayout()
@@ -95,18 +98,47 @@ class CentralWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
 
+       
+        #obtain selected documents from the scene + sort them
+        selected_docs = sorted(self.scene.selected_docs, reverse=True)
+
+        #global idx
+        idx = 0
+        #first add the selected documents
+        for doc_id in selected_docs:
+            # self.table.insertRow(0) #insert at the beginning
+            item_id = QTableWidgetItem(str(doc_id))
+            item_topic_id = QTableWidgetItem(str(self.doc_topic[doc_id]))
+            item_topic_colour = QTableWidgetItem()
+            item_topic_colour.setBackground(self.brush[self.doc_topic[doc_id]])
+            self.table.setItem(idx, 0, item_id)
+            self.table.setItem(idx, 1, item_topic_id)
+            self.table.setItem(idx, 2, item_topic_colour)
+            #TODO link cell double_clicked to the wordclouds
+            idx+=1
+
+        #then add the rest of the documents
         for i, topic in enumerate(self.doc_topic):
+            if i in selected_docs:
+                continue
             item_id = QTableWidgetItem(str(i))
             item_topic_id = QTableWidgetItem(str(topic))
             item_topic_colour = QTableWidgetItem()
             item_topic_colour.setBackground(self.brush[topic])
-            self.table.setItem(i, 0, item_id)
-            self.table.setItem(i, 1, item_topic_id)
-            self.table.setItem(i, 2, item_topic_colour)
+            self.table.setItem(idx, 0, item_id)
+            self.table.setItem(idx, 1, item_topic_id)
+            self.table.setItem(idx, 2, item_topic_colour)
             #TODO link cell double_clicked to the wordclouds
+            idx+=1
+
+        #highlight the selected rows
+        for col in range(0, 2):
+            for row in range(len(selected_docs)):
+                self.table.item(row, col).setSelected(True)
 
         #TODO sorting by compass
-        self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+        # self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+        
         self.table.resizeColumnsToContents()
 
 class LabeledWidget(QWidget):
