@@ -1,19 +1,21 @@
-import math
-import random
+from pydoc import doc
 import sys
-import numpy as np
-from typing import Union, Literal
+from typing import Literal, Union
 
+import numpy as np
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
                            QPen, QSurfaceFormat, QTransform)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QGraphicsScene, QGraphicsView,
-                               QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget,QComboBox, QSpinBox)
+from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
+                               QGraphicsView, QHBoxLayout, QHeaderView, QLabel,
+                               QMainWindow, QMenuBar, QSizePolicy, QSpinBox,
+                               QWidget, QTableWidget, QTableWidgetItem, QGraphicsEllipseItem)
 
-from src.doc_landscape import VisGraphicsScene, VisGraphicsView
+from src.doc_table import TableView
 from src.data_utils import DocumentData
+from src.doc_landscape import VisGraphicsScene, VisGraphicsView
+
 
 class CentralWidget(QWidget):
     """
@@ -22,8 +24,9 @@ class CentralWidget(QWidget):
     def __init__(self) -> None:
         QWidget.__init__(self)
 
-        #init subwidget
+        #init subwidget - scene
         self.scene = VisGraphicsScene()
+        self.scene.selectionChanged.connect(self.generateTable) #connect selection change to table update
         self.brush = [QBrush(Qt.yellow), QBrush(Qt.green), QBrush(Qt.blue), QBrush(Qt.red), QBrush(Qt.cyan), QBrush(Qt.magenta), QBrush(Qt.gray), QBrush(Qt.darkYellow), QBrush(Qt.darkGreen), QBrush(Qt.darkBlue), QBrush(Qt.darkRed), QBrush(Qt.darkCyan)]
         
         format = QSurfaceFormat()
@@ -37,20 +40,11 @@ class CentralWidget(QWidget):
         self.view.setViewport(gl)
         self.view.setBackgroundBrush(QColor(255, 255, 255))
 
-        #init subwidget TODO change to table
-        self.scene2 = VisGraphicsScene()
-        
-        format2 = QSurfaceFormat()
-        format2.setSamples(4)
-        
-        gl2 = QOpenGLWidget()
-        gl2.setFormat(format2)
-        gl2.setAutoFillBackground(True)
-        
-        self.view2 = VisGraphicsView(self.scene2, self)
-        self.view2.setViewport(gl2)
-        self.view2.setBackgroundBrush(QColor(255, 255, 255))
-        
+        #init subwidget - table
+        self.table_view = TableView()
+        self.table = self.table_view.table
+        self.table.setSelectionMode(QTableWidget.NoSelection)
+
         #set layout for table right and visualization left
         self.main_layout = QHBoxLayout()
         size = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -64,8 +58,8 @@ class CentralWidget(QWidget):
 
         #right layout
         size.setHorizontalStretch(1)
-        self.view2.setSizePolicy(size)
-        self.main_layout.addWidget(self.view2)
+        self.table.setSizePolicy(size)
+        self.main_layout.addWidget(self.table_view)
 
         #set the layout to the widget
         self.setLayout(self.main_layout)
@@ -75,14 +69,14 @@ class CentralWidget(QWidget):
         #load all data
         self.document = DocumentData(data_path="data/bag+of+words", name=name)
         self.document_coords = self.document.fit_transform(dimred_solver)
-        self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+        self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components)
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
         #add data
         self.reload_scene()
 
-    def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf", n_components: int = 10, num_topic_words: int = 5):
-        self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components, num_topic_words=num_topic_words)
+    def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = 'nmf', n_components: int = 10, num_topic_words: int = 5):
+        self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components)
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
         self.reload_scene()
 
@@ -90,52 +84,72 @@ class CentralWidget(QWidget):
         self.scene.clear()
         self.scene.selection = None
         self.scene.wasDragg = False
-        self.generateAndMapData()
+        self.scene.generateAndMapData(self.document_coords, self.doc_topic, self.brush)
 
     def reload_num_topic_words(self, num_topic_words: int = 5):
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
 
-    def generateAndMapData(self):
-        #Generate random data
-        # count = 100
-        # x = []
-        # y = []
-        # r = []
-        # c = []
-        # for i in range(0, count):
-        #     x.append(random.random()*600)
-        #     y.append(random.random()*400)
-        #     r.append(random.random()*50)
-        #     c.append(random.randint(0, 2))
 
-        # #Map data to graphical elements
-        # for i in range(0, count):
-        #     d = 2*r[i]
-        #     ellipse = self.scene.addEllipse(x[i], y[i], d, d, self.scene.pen, self.brush[c[i]])
+    def generateTable(self):
+        self.table.clear()
+        self.table.setRowCount(self.doc_topic.shape[0])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Doc ID", "Topic ID", "Topic Colour"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.verticalHeader().setVisible(False)
 
-        #Generate random data
-        #remap the result of pca to the screen
-        x = self.document_coords[:, 0]
-        y = self.document_coords[:, 1]
-        x_min = np.min(x)
-        x_max = np.max(x)
-        y_min = np.min(y)
-        y_max = np.max(y)
+       
+        #obtain selected documents from the scene + sort them
+        selected_docs = sorted(self.scene.selected_docs, reverse=True)
 
-        x_min_max_scaled = (x - x_min) / (x_max - x_min)
-        y_min_max_scaled = (y - y_min) / (y_max - y_min)
+        #global idx
+        idx = 0
+        #first add the selected documents
+        for doc_id in selected_docs:
+            # self.table.insertRow(0) #insert at the beginning
+            item_id = QTableWidgetItem(str(doc_id))
+            item_topic_id = QTableWidgetItem(str(self.doc_topic[doc_id]))
+            item_topic_colour = QTableWidgetItem()
+            item_topic_colour.setBackground(self.brush[self.doc_topic[doc_id]])
+            self.table.setItem(idx, 0, item_id)
+            self.table.setItem(idx, 1, item_topic_id)
+            self.table.setItem(idx, 2, item_topic_colour)
+            #TODO link cell double_clicked to the wordclouds
+            idx+=1
 
-        #rescale minmaxed to the screen TODO better alignment with the space!
-        width = 800
-        height = 600
-        x = x_min_max_scaled * width
-        y = y_min_max_scaled * height
-        c = self.doc_topic #get colors
+        #then add the rest of the documents
+        for i, topic in enumerate(self.doc_topic):
+            if i in selected_docs:
+                continue
+            item_id = QTableWidgetItem(str(i))
+            item_topic_id = QTableWidgetItem(str(topic))
+            item_topic_colour = QTableWidgetItem()
+            item_topic_colour.setBackground(self.brush[topic])
+            self.table.setItem(idx, 0, item_id)
+            self.table.setItem(idx, 1, item_topic_id)
+            self.table.setItem(idx, 2, item_topic_colour)
+            #TODO link cell double_clicked to the wordclouds
+            idx+=1
 
-        #Map data to graphical elements
-        for i in range(0, x.shape[0]):
-            d = 3
-            ellipse = self.scene.addEllipse(x[i], y[i], d,d, self.scene.pen, self.brush[c[i]])
+        #highlight the selected rows
+        for col in range(0, 2):
+            for row in range(len(selected_docs)):
+                self.table.item(row, col).setSelected(True)
+
+        #TODO sorting by compass
+        # self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+        
+        self.table.resizeColumnsToContents()
+
+class LabeledWidget(QWidget):
+    def __init__(self, label_text, widget):
+        super().__init__()
+        layout = QHBoxLayout()
+        self.label = QLabel(label_text)
+        self.widget = widget
+        layout.addWidget(self.label)
+        layout.addWidget(self.widget)
+        self.setLayout(layout)
 
 
 class MainWindow(QMainWindow):
@@ -177,7 +191,9 @@ class MainWindow(QMainWindow):
         self.central_widget.reload_data(name, dimred_solver=self.dimred_literals[self.dimred_combo.currentIndex()], 
                                         topic_solver=self.topic_literals[self.topic_combo.currentIndex()], 
                                         n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
+        self.central_widget.generateTable()
         self.status_bar.showMessage(f"Data {name} loaded and plotted")
+        self.setWindowTitle(f'Document Corpus Visualization - dataset: {name}')
 
     def dimred_combo_action(self, index:int):
         dimred = self.dimred_literals[index]
@@ -188,10 +204,12 @@ class MainWindow(QMainWindow):
     def topic_combo_action(self, index:int):
         topic_solver = self.topic_literals[index]
         self.central_widget.reload_topics(topic_solver=topic_solver, n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
+        self.central_widget.generateTable()
         self.status_bar.showMessage(f"Topics computed with {topic_solver}")
 
     def topic_num_topics_action(self, value:int):
         self.central_widget.reload_topics(topic_solver=self.topic_literals[self.topic_combo.currentIndex()], n_components=value, num_topic_words=self.num_topic_words_spinbox.value())
+        self.central_widget.generateTable()
         self.status_bar.showMessage(f"Topics computed for {value} topics")
 
     def topic_num_topic_words_action(self, value:int):
@@ -208,15 +226,15 @@ class MainWindow(QMainWindow):
         #add alternatives to the menu to let user choose one from kos, nips, enron
         self.file_menu_open_kos = self.file_menu_open.addAction("KOS")
         self.file_menu_open_nips = self.file_menu_open.addAction("NIPS")
-        self.file_menu_open_enron = self.file_menu_open.addAction("Enron")
-        self.file_menu_open_nytimes = self.file_menu_open.addAction("NYTimes")
-        self.file_menu_open_pubmed = self.file_menu_open.addAction("PubMed")
+        # self.file_menu_open_enron = self.file_menu_open.addAction("Enron")
+        # self.file_menu_open_nytimes = self.file_menu_open.addAction("NYTimes")
+        # self.file_menu_open_pubmed = self.file_menu_open.addAction("PubMed")
         #connect the actions for kos and nips
         self.file_menu_open_kos.triggered.connect(lambda: self.open_file_action("kos"))
         self.file_menu_open_nips.triggered.connect(lambda: self.open_file_action("nips"))
-        self.file_menu_open_enron.triggered.connect(lambda: self.open_file_action("enron"))
-        self.file_menu_open_nytimes.triggered.connect(lambda: self.open_file_action("nytimes"))
-        self.file_menu_open_pubmed.triggered.connect(lambda: self.open_file_action("pubmed"))
+        # self.file_menu_open_enron.triggered.connect(lambda: self.open_file_action("enron"))
+        # self.file_menu_open_nytimes.triggered.connect(lambda: self.open_file_action("nytimes"))
+        # self.file_menu_open_pubmed.triggered.connect(lambda: self.open_file_action("pubmed"))
 
         #exit action
         self.file_menu.addSeparator()
@@ -231,38 +249,45 @@ class MainWindow(QMainWindow):
         # self.toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
 
         #dimred combobox
-        self.dimred_combo = QComboBox()
+        self.dimred_combo_label_widget = LabeledWidget("Dimensionality Reduction", QComboBox())
+        self.dimred_combo = self.dimred_combo_label_widget.widget
         self.dimred_combo.addItems(["PCA", "UMAP", "t-SNE"])
         self.dimred_combo.setAccessibleName("Dimensionality Reduction")
         self.dimred_literals = ["pca", "umap", "tsne"]
         self.dimred_combo.currentIndexChanged.connect(self.dimred_combo_action)
-        self.toolbar.addWidget(self.dimred_combo)
+        self.toolbar.addWidget(self.dimred_combo_label_widget)
 
         #topic solver combobox
-        self.topic_combo = QComboBox()
+        self.topic_combo_label_widget = LabeledWidget("Topic Solver", QComboBox())
+        self.topic_combo = self.topic_combo_label_widget.widget
         self.topic_combo.addItems(["NMF", "LDA"])
         self.topic_combo.setAccessibleName("Topic Solver")
         self.topic_literals = ["nmf", "lda"]
         self.topic_combo.currentIndexChanged.connect(self.topic_combo_action)
-        self.toolbar.addWidget(self.topic_combo)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.topic_combo_label_widget)
 
         #spinbox for number of topics
-        self.num_topics_spinbox = QSpinBox()
+        self.num_topics_spinbox_label = LabeledWidget("Number of Topics", QSpinBox())
+        self.num_topics_spinbox = self.num_topics_spinbox_label.widget
         self.num_topics_spinbox.setAccessibleName("Number of Topics")
         self.num_topics_spinbox.setMinimum(1)
         self.num_topics_spinbox.setMaximum(12)
         self.num_topics_spinbox.setValue(10)
         self.num_topics_spinbox.valueChanged.connect(self.topic_num_topics_action)
-        self.toolbar.addWidget(self.num_topics_spinbox)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.num_topics_spinbox_label)
 
         #spinbox for number of topic words
-        self.num_topic_words_spinbox = QSpinBox()
+        self.num_topic_words_spinbox_label = LabeledWidget("Number of Topic Words", QSpinBox())
+        self.num_topic_words_spinbox = self.num_topic_words_spinbox_label.widget
         self.num_topic_words_spinbox.setAccessibleName("Number of Topic Words")
         self.num_topic_words_spinbox.setMinimum(1)
         self.num_topic_words_spinbox.setMaximum(10)
         self.num_topic_words_spinbox.setValue(5)
         self.num_topic_words_spinbox.valueChanged.connect(self.topic_num_topic_words_action)
-        self.toolbar.addWidget(self.num_topic_words_spinbox)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.num_topic_words_spinbox_label)
 
         
 
