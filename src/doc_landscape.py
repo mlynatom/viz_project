@@ -24,12 +24,6 @@ class Compass(QGraphicsEllipseItem, QObject):
 
         return super().itemChange(change, value)
 
-    
-
-class Document(QGraphicsEllipseItem):
-    def __init__(self, id, *args, **kwargs):
-        QGraphicsEllipseItem.__init__(self, *args, **kwargs)
-        self.id = id
 
 class VisGraphicsScene(QGraphicsScene):
     #define signal for selection change
@@ -91,7 +85,7 @@ class VisGraphicsScene(QGraphicsScene):
         self.init_compass(width, height)
 
     def get_ellipses_ids_inside_compass(self):
-        #TODO not working?
+        print("Compass moved", self.compass.scenePos())
         ellipses_inside_area = []
         target_rect = self.compass.sceneBoundingRect()
 
@@ -110,7 +104,8 @@ class VisGraphicsScene(QGraphicsScene):
 
 
     def init_compass(self, w, h):
-        self.compass = Compass(w/2,h/2,50,50)
+        self.compass = Compass(0,0,50,50)
+        self.compass.setPos(w/2, h/2)
         self.compass.setBrush(QColor(0, 0, 0, 0))
         self.compass.setPen(self.pen_compass)
         self.compass.setFlag(QGraphicsEllipseItem.ItemIsMovable, True) #set that this item can be moved
@@ -142,6 +137,7 @@ class VisGraphicsView(QGraphicsView):
         self.startX = event.position().x()
         self.startY = event.position().y()
         self.myScene.wasDragg = False
+        print("Mouse press event", self.startX, self.startY)
 
         super().mousePressEvent(event)
 
