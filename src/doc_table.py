@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
 
 from src.data_utils import DocumentData
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
-from src.wordcloud import NewWindow, WordCloudWindow
+from src.wordcloud import WordCloudWindow
 
 class TableView(QWidget):
     def __init__(self):
