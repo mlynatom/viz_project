@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
 
 from src.data_utils import DocumentData
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
+from src.wordcloud import WordCloudWindow
 
 class TableView(QWidget):
     def __init__(self):
@@ -24,7 +25,7 @@ class TableView(QWidget):
 
         #button init
         self.button = QPushButton("View Words")
-        #TODO connect to the words selected by the compass
+        self.button.clicked.connect(self.open_new_window) #on init open window
 
         self.main_layout = QVBoxLayout()
         size = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -40,3 +41,7 @@ class TableView(QWidget):
         self.main_layout.setStretchFactor(self.table, 100)
 
         self.setLayout(self.main_layout)
+
+    def open_new_window(self):
+        self.new_window = WordCloudWindow()
+        self.new_window.show()

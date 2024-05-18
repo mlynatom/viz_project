@@ -11,7 +11,7 @@
 
 import sys, random, math
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QSizePolicy
+from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QSizePolicy, QGraphicsEllipseItem
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtGui import QBrush, QPen, QTransform, QPainter, QSurfaceFormat, QColor
 
@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
 
     def generateAndMapData(self):
         #Generate random data
-        count = 1000;
+        count = 10
         x = []
         y = []
         r = []
@@ -112,6 +112,12 @@ class MainWindow(QMainWindow):
         for i in range(0, count):
             d = 2*r[i]
             ellipse = self.scene.addEllipse(x[i], y[i], d, d, self.scene.pen, self.brush[c[i]])
+
+
+        self.compass = self.scene.addEllipse(0, 0, 50, 50, self.scene.pen, QBrush(Qt.red))
+
+
+        self.compass.setFlag(QGraphicsEllipseItem.ItemIsMovable, True)
 
 def main():
     app = QApplication(sys.argv)
