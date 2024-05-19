@@ -3,12 +3,12 @@ import math
 import numpy as np
 from PySide6.QtCore import QRectF, QSize, Qt, Signal, QObject
 from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
-                           QPen, QSurfaceFormat, QTransform)
+                           QPen, QSurfaceFormat, QTransform,QFont)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QGraphicsEllipseItem,
                                QGraphicsItem, QGraphicsScene, QGraphicsView,
                                QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget)
+                               QSizePolicy, QWidget, QLabel, QGraphicsTextItem)
 
 class Compass(QGraphicsEllipseItem, QObject):
     #define signal for position change
@@ -23,6 +23,57 @@ class Compass(QGraphicsEllipseItem, QObject):
             self.positionChanged.emit() #emit signal when position changes
 
         return super().itemChange(change, value)
+    
+class DocumentEllipse(QGraphicsEllipseItem):
+    def __init__(self, x, y, w, h, pen, brush, id:str) -> None:
+        super(DocumentEllipse, self).__init__(x,y,w,h)
+        self.setPen(pen)
+        self.setBrush(brush)
+        self.id = id
+
+        # Enable hover events
+        self.setAcceptHoverEvents(True)
+
+        self.label_clicked = False
+        self.compass_over = False
+
+        self.label = QGraphicsTextItem(id, self)
+        font = QFont()
+        font.setPointSize(3)  # Set the font size
+        self.label.setFont(font)
+
+        self.label.setDefaultTextColor(Qt.black)
+        self.label.setVisible(False)
+        
+        label_height = self.label.boundingRect().height()
+        label_x = self.rect().right()
+        label_y = self.rect().top()
+        self.label.setPos(label_x, label_y - label_height/2)
+
+        
+
+    def mousePressEvent(self, event):
+        self.label_clicked = not self.label_clicked
+        self.label.setVisible(self.label_clicked)
+        super().mousePressEvent(event)
+
+    def hoverEnterEvent(self, event):
+        self.label.setVisible(True)
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        if not self.label_clicked and not self.compass_over:
+            self.label.setVisible(False)
+        super().hoverLeaveEvent(event)
+
+    def compassOver(self):
+        self.label.setVisible(True)
+        self.compass_over = True
+
+    def compassNotOver(self):
+        self.compass_over = False
+        self.label.setVisible(False)
+
 
 
 class VisGraphicsScene(QGraphicsScene):
@@ -51,9 +102,12 @@ class VisGraphicsScene(QGraphicsScene):
         if item is self.compass:
             pass
             # print("Compass clicked")
-        elif(item):
+        elif isinstance(item, DocumentEllipse):
             item.setPen(self.pen_docs_selected)
             self.selection = item
+        else:
+            pass
+            
 
     def generateAndMapData(self, document_coords, doc_topic, brush):
         #remap the results to the screen
@@ -78,7 +132,9 @@ class VisGraphicsScene(QGraphicsScene):
         self.doc_elipses = []
         for i in range(0, x.shape[0]):
             d = 3
-            ellipse = self.addEllipse(x[i], y[i], d,d, self.pen_docs, brush[c[i]])
+            ellipse = DocumentEllipse(x[i], y[i], d,d, self.pen_docs, brush[c[i]], str(i))
+            # ellipse = self.addEllipse(x[i], y[i], d,d, self.pen_docs, brush[c[i]])
+            self.addItem(ellipse)
             self.elipse2id[ellipse] = i
 
         #TODO add the compass (ellipse with transparent background)
@@ -93,7 +149,10 @@ class VisGraphicsScene(QGraphicsScene):
             if isinstance(item, QGraphicsEllipseItem) and item != self.compass:
                 item_rect = item.sceneBoundingRect()
                 if target_rect.contains(item_rect):
+                    item.compassOver()
                     ellipses_inside_area.append(self.elipse2id[item])
+                else:
+                    item.compassNotOver()
 
         if ellipses_inside_area != self.selected_docs:
             self.selected_docs = ellipses_inside_area
@@ -137,7 +196,7 @@ class VisGraphicsView(QGraphicsView):
         self.startX = event.position().x()
         self.startY = event.position().y()
         self.myScene.wasDragg = False
-        print("Mouse press event", self.startX, self.startY)
+        # print("Mouse press event", self.startX, self.startY)
 
         super().mousePressEvent(event)
 
