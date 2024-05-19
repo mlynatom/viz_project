@@ -97,8 +97,9 @@ class VisGraphicsScene(QGraphicsScene):
     selectionChanged = Signal()
 
 
-    def __init__(self):
+    def __init__(self, global_event):
         super(VisGraphicsScene, self).__init__()
+        self.global_event = global_event
         self.wasDragg = False
         self.pen_compass = QPen(Qt.black, 2)
         self.compass = None
@@ -107,22 +108,14 @@ class VisGraphicsScene(QGraphicsScene):
         self.ctrl_pressed = False
 
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Control:
-            self.ctrl_pressed = True
-        super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key.Key_Control:
-            self.ctrl_pressed = False
-        super().keyReleaseEvent(event)
-
     def mouseReleaseEvent(self, event):
         if (self.wasDragg):
             return
-
         # check what was clicked
         item = self.itemAt(event.scenePos(), QTransform())
+        self.handle_item_click(item)
+
+    def handle_item_click(self, item):
         if item is self.compass:
             pass
             # print("Compass clicked")
@@ -131,7 +124,7 @@ class VisGraphicsScene(QGraphicsScene):
                 self.selected_docs.remove(self.elipse2id.get(item))
                 self.selectionChanged.emit()
             else:
-                if not self.ctrl_pressed:
+                if not self.global_event.ctrl_pressed:
                     for elipseid in self.selected_docs:
                         self.doc_elipses[elipseid].unselectionHandler()
                     self.selected_docs = [self.elipse2id.get(item)]
@@ -139,8 +132,7 @@ class VisGraphicsScene(QGraphicsScene):
                     self.selected_docs.append(self.elipse2id.get(item))
                 item.selectionHandler()
                 self.selectionChanged.emit()
-        else:
-            pass
+
 
     def generateAndMapData(self, document_coords, doc_topic, brush):
         # remap the results to the screen
@@ -184,11 +176,11 @@ class VisGraphicsScene(QGraphicsScene):
                 if target_rect.contains(item_rect):
                     item.compassOver()
                     ellipses_inside_area.append(self.elipse2id[item])
-                elif not self.ctrl_pressed:
+                elif not self.global_event.ctrl_pressed:
                     item.compassNotOver()
 
         if ellipses_inside_area != self.selected_docs:
-            if not self.ctrl_pressed:
+            if not self.global_event.ctrl_pressed:
                 self.selected_docs = ellipses_inside_area
             else:
                 for item in ellipses_inside_area:
@@ -196,6 +188,8 @@ class VisGraphicsScene(QGraphicsScene):
                         self.selected_docs.append(item)
                         self.doc_elipses[item].selectionHandler()
             self.selectionChanged.emit()
+
+
     def init_compass(self, w, h):
         self.compass = Compass(0, 0, 50, 50)
         self.compass.setPos(w / 2, h / 2)
