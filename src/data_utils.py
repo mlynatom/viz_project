@@ -108,9 +108,20 @@ class DocumentData():
         return counts_matrix
     
     def _pca(self):
-        #TODO write own
-        pca = PCA(n_components=2, svd_solver="arpack")
-        return pca.fit_transform(self.tfidf_matrix)
+        #pca = PCA(n_components=2, svd_solver="arpack")
+        #return pca.fit_transform(self.tfidf_matrix)
+        print("Precomputed data not found, computing PCA, please wait...")
+        matrix = self.tfidf_matrix.toarray()
+        n_components = 2
+        m, n = matrix.shape
+        eigenValues, eigenVectors = np.linalg.eig(np.cov(matrix.T))
+
+        idx = eigenValues.argsort()[::-1]
+        eigenValues = eigenValues[idx]
+        eigenVectors = eigenVectors[:, idx]
+        U = eigenVectors[:, :n_components]
+        print("PCA computed")
+        return matrix @ U
     
     def _nmf(self, n_components:int = 10):
         nmf = NMF(n_components=n_components, random_state=SEED)
