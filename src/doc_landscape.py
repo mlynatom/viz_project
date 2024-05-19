@@ -164,6 +164,8 @@ class VisGraphicsScene(QGraphicsScene):
             self.doc_elipses.append(ellipse)
 
         self.init_compass(width, height)
+        self.selected_docs = []
+        self.selectionChanged.emit()
 
     def get_ellipses_ids_inside_compass(self):
         # print("Compass moved", self.compass.scenePos())

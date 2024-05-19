@@ -27,6 +27,7 @@ class DocumentData():
         self.tfidf_matrix = TfidfTransformer().fit_transform(self.doc_words_matrix)
         self.selected_documents = []
         self.doc_topics = None
+        self.topics = None
         self.topics_method = None
 
     def fit_transform(self, solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]]):

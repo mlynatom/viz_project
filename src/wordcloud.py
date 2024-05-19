@@ -98,14 +98,14 @@ class WordCloudWindow(QWidget):
             self.generated_topic_wordcloud = False
             self.selection_wordcloud_button.setStyleSheet(self.pushed_styledheet)
             self.topic_wordcloud_button.setStyleSheet("")
-            print("selected")
+            self._generate_words_from_g2()
 
     def generate_topic_wordcloud(self):
         if not self.generated_topic_wordcloud:
             self.generated_topic_wordcloud = True
             self.topic_wordcloud_button.setStyleSheet(self.pushed_styledheet)
             self.selection_wordcloud_button.setStyleSheet("")
-            print("topic")
+            self._generate_words_from_topic()
 
 
     def _get_text_item(self, idx, font_size):
@@ -127,6 +127,25 @@ class WordCloudWindow(QWidget):
         g2 = self.document_data.compute_g2()
         g2 = normalise(g2)
         sorted_words = np.flip(np.argsort(g2))
+        self._generate_words(sorted_words, g2)
+
+    def _generate_words_from_topic(self):
+        topics_of_documents = self.document_data.doc_topics
+        topics = self.document_data.topics
+        selected_documents = self.document_data.selected_documents
+        if not selected_documents:
+            selected_topic = 0
+        else:
+            counts = np.bincount(topics_of_documents[selected_documents])
+            selected_topic = np.argmax(counts)
+        sizes = normalise(topics[selected_topic])
+        sorted_words = np.flip(np.argsort(sizes))
+        self._generate_words(sorted_words, sizes)
+
+    def _generate_words(self, sorted_words, sizes):
+        print(sorted_words)
+        print(sizes[sorted_words])
+        self.scene.clear()
         max_width = self.scene.width()
         max_height = self.scene.height()
         x = 0
@@ -135,11 +154,11 @@ class WordCloudWindow(QWidget):
         for idx in sorted_words:
             # Make it a bit nonlinear, so the small words are still readable
             # There is a lot of cases, where one word outscale the rest
-            size = g2[idx]**0.9 * 100
+            size = sizes[idx] ** 0.9 * 100
             if size < 10:
                 break
             item = self._get_text_item(idx, size)
-            #print(x, y, item.boundingRect().width(), item.boundingRect().height(), item.toPlainText())
+            # print(x, y, item.boundingRect().width(), item.boundingRect().height(), item.toPlainText())
             if item.boundingRect().width() + x <= max_width:
                 if not row_height:  # to have it aligned from the bottom
                     row_height = item.boundingRect().height()
@@ -156,11 +175,5 @@ class WordCloudWindow(QWidget):
                 break
             self.scene.addItem(item)
 
-    def _generate_words_from_topic(self):
-        selected_documents = self.document_data.selected_documents
-        topics_of_documents = self.document_data.doc_topics
-        topics = self.document_data.topics
-        print(topics.shape)
-        print(topics_of_documents.shape)
 
 
