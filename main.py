@@ -82,7 +82,7 @@ class CentralWidget(QWidget):
         self.setLayout(self.main_layout)
 
     def reload_data(self, name: str = "kos",
-                    dimred_solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]] = "pca",
+                    dimred_solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]] = "tsne",
                     topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf", n_components: int = 10,
                     num_topic_words: int = 5):
         # load all data
@@ -296,18 +296,18 @@ class MainWindow(QMainWindow):
         # dimred combobox
         self.dimred_combo_label_widget = LabeledWidget("Dimensionality Reduction", QComboBox())
         self.dimred_combo = self.dimred_combo_label_widget.widget
-        self.dimred_combo.addItems(["PCA", "UMAP", "t-SNE"])
+        self.dimred_combo.addItems(["t-SNE", "UMAP", "PCA"])
         self.dimred_combo.setAccessibleName("Dimensionality Reduction")
-        self.dimred_literals = ["pca", "umap", "tsne"]
+        self.dimred_literals = ["tsne", "umap", "pca"]
         self.dimred_combo.currentIndexChanged.connect(self.dimred_combo_action)
         self.toolbar.addWidget(self.dimred_combo_label_widget)
 
         # topic solver combobox
         self.topic_combo_label_widget = LabeledWidget("Topic Solver", QComboBox())
         self.topic_combo = self.topic_combo_label_widget.widget
-        self.topic_combo.addItems(["NMF", "LDA"])
+        self.topic_combo.addItems(["LDA", "NMF"])
         self.topic_combo.setAccessibleName("Topic Solver")
-        self.topic_literals = ["nmf", "lda"]
+        self.topic_literals = ["lda", "nmf"]
         self.topic_combo.currentIndexChanged.connect(self.topic_combo_action)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.topic_combo_label_widget)
@@ -318,7 +318,7 @@ class MainWindow(QMainWindow):
         self.num_topics_spinbox.setAccessibleName("Number of Topics")
         self.num_topics_spinbox.setMinimum(1)
         self.num_topics_spinbox.setMaximum(12)
-        self.num_topics_spinbox.setValue(10)
+        self.num_topics_spinbox.setValue(8)
         self.num_topics_spinbox.valueChanged.connect(self.topic_num_topics_action)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.num_topics_spinbox_label)
