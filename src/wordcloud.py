@@ -72,8 +72,10 @@ class WordCloudWindow(QWidget):
         y = 0
         row_height = None
         for idx in sorted_words:
-            size = g2[idx] * 100
-            if size < 5:
+            # Make it a bit nonlinear, so the small words are still readable
+            # There is a lot of cases, where one word outscale the rest
+            size = g2[idx]**0.9 * 100
+            if size < 10:
                 break
             item = self._get_text_item(idx, size)
             #print(x, y, item.boundingRect().width(), item.boundingRect().height(), item.toPlainText())
@@ -95,7 +97,8 @@ class WordCloudWindow(QWidget):
 
     def _get_text_item(self, idx, font_size):
         text = self.document_data.vocabulary[idx]
-        color = random.choice(COLORS)
+        best_topic = self.document_data.get_words_best_topic(idx, self.document_data.topics_all)
+        color = self.document_data.brush[best_topic].color()
         # Create a QGraphicsTextItem
         text_item = QGraphicsTextItem(text + " ")
         # Set the font size and type

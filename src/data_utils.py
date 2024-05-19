@@ -142,6 +142,9 @@ class DocumentData():
 
         return topics_words
 
+    def get_words_best_topic(self, words_idx, topic_words_matrix) -> int:
+        return np.argmax(topic_words_matrix[:, words_idx])
+
     def _total_term_counts(self, doc_words):
         return np.sum(doc_words, axis=0)
 
