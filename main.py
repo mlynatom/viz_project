@@ -250,8 +250,10 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(f"Topics computed with {topic_solver}")
 
     def topic_num_topics_action(self, value: int):
+        # self.central_widget.reload_topics(topic_solver=self.topic_literals[self.topic_combo.currentIndex()],
+        #                                   n_components=value, num_topic_words=self.num_topic_words_spinbox.value())
         self.central_widget.reload_topics(topic_solver=self.topic_literals[self.topic_combo.currentIndex()],
-                                          n_components=value, num_topic_words=self.num_topic_words_spinbox.value())
+                                          n_components=value)
         self.central_widget.generateTable()
         self.status_bar.showMessage(f"Topics computed for {value} topics")
 
