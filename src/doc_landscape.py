@@ -85,7 +85,7 @@ class VisGraphicsScene(QGraphicsScene):
         self.init_compass(width, height)
 
     def get_ellipses_ids_inside_compass(self):
-        print("Compass moved", self.compass.scenePos())
+        #print("Compass moved", self.compass.scenePos())
         ellipses_inside_area = []
         target_rect = self.compass.sceneBoundingRect()
 
