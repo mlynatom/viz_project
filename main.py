@@ -239,8 +239,7 @@ class MainWindow(QMainWindow):
         dimred = self.dimred_literals[index]
         self.central_widget.reload_data(self.loaded_file, dimred,
                                         topic_solver=self.topic_literals[self.topic_combo.currentIndex()],
-                                        n_components=self.num_topics_spinbox.value(),
-                                        num_topic_words=self.num_topic_words_spinbox.value())
+                                        n_components=self.num_topics_spinbox.value())
         self.status_bar.showMessage(f"Data {self.loaded_file} loaded and plotted with {dimred}")
 
     def topic_combo_action(self, index: int):
