@@ -91,7 +91,7 @@ class CentralWidget(QWidget):
         self.table_view.document_data = self.document
         self.document_coords = self.document.fit_transform(dimred_solver)
         self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components)
-        self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
+        self.topics = self.document.get_topics_words(self.topics_all)
         self.document.topic_words = self.topics
         self.document.doc_topic = self.doc_topic
         self.document.topics_all = self.topics_all
@@ -99,9 +99,9 @@ class CentralWidget(QWidget):
         self.reload_scene()
 
     def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = 'nmf', n_components: int = 10,
-                      num_topic_words: int = 5):
+                         num_topic_words: int = 5):
         self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components)
-        self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
+        self.topics = self.document.get_topics_words(self.topics_all)
         self.document.topic_words = self.topics
         self.document.doc_topic = self.doc_topic
         self.document.topics_all = self.topics_all
@@ -244,8 +244,8 @@ class MainWindow(QMainWindow):
 
     def topic_combo_action(self, index: int):
         topic_solver = self.topic_literals[index]
-        self.central_widget.reload_topics(topic_solver=topic_solver, n_components=self.num_topics_spinbox.value(),
-                                          num_topic_words=self.num_topic_words_spinbox.value())
+        self.central_widget.reload_topics(topic_solver=topic_solver, n_components=self.num_topics_spinbox.value())
+                                          #num_topic_words=self.num_topic_words_spinbox.value())
         self.central_widget.generateTable()
         self.status_bar.showMessage(f"Topics computed with {topic_solver}")
 
