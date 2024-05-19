@@ -78,13 +78,13 @@ class WordCloudWindow(QWidget):
             item = self._get_text_item(idx, size)
             #print(x, y, item.boundingRect().width(), item.boundingRect().height(), item.toPlainText())
             if item.boundingRect().width() + x <= max_width:
-                if row_height:  # to have it aligned from the bottom
-                    item.setPos(x, y + (row_height - item.boundingRect().height()))
-                else:
+                if not row_height:  # to have it aligned from the bottom
                     row_height = item.boundingRect().height()
-                    item.setPos(x, y)
+                item.setPos(x, y + (row_height - item.boundingRect().height()) * 0.9)
                 x += item.boundingRect().width()
             elif item.boundingRect().height() + row_height + y <= max_height:
+                if not row_height:
+                    row_height = item.boundingRect().height()
                 y += row_height
                 row_height = item.boundingRect().height()
                 item.setPos(0, y)
