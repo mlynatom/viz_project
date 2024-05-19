@@ -91,8 +91,8 @@ class CentralWidget(QWidget):
         self.table_view.document_data = self.document
         self.document_coords = self.document.fit_transform(dimred_solver)
         self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components)
-        self.topics = self.document.get_topics_words(self.topics_all)
-        self.document.topic_words = self.topics
+        # self.topics = self.document.get_topics_words(self.topics_all)
+        # self.document.topic_words = self.topics
         self.document.doc_topic = self.doc_topic
         self.document.topics_all = self.topics_all
         # add data
@@ -101,8 +101,8 @@ class CentralWidget(QWidget):
     def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = 'nmf', n_components: int = 10,
                          num_topic_words: int = 5):
         self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components)
-        self.topics = self.document.get_topics_words(self.topics_all)
-        self.document.topic_words = self.topics
+        # self.topics = self.document.get_topics_words(self.topics_all)
+        # self.document.topic_words = self.topics
         self.document.doc_topic = self.doc_topic
         self.document.topics_all = self.topics_all
         self.reload_scene()
@@ -113,8 +113,9 @@ class CentralWidget(QWidget):
         self.scene.generateAndMapData(self.document_coords, self.doc_topic, self.brush)
 
     def reload_num_topic_words(self, num_topic_words: int = 5):
-        self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
-        self.document.topic_words = self.topics
+        pass
+        # self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
+        # self.document.topic_words = self.topics
 
     def generateTable(self):
         self.table.clear()
