@@ -33,10 +33,11 @@ class DocumentData():
         """
         if solver == "pca":
             try:
+                #assert False
                 pca_res = np.load(f"./precomputed/{self.name}_pca.npy")
             except:
                 pca_res = self._pca()
-                #np.save(f"./precomputed/{self.name}_pca.npy", pca_res) #we do not need to precompute PCA
+                np.save(f"./precomputed/{self.name}_pca.npy", pca_res) #we do not need to precompute PCA
 
             return pca_res
         elif solver == "tsne":
@@ -121,7 +122,7 @@ class DocumentData():
         eigenVectors = eigenVectors[:, idx]
         U = eigenVectors[:, :n_components]
         print("PCA computed")
-        return matrix @ U
+        return (matrix @ U).astype(float)
     
     def _nmf(self, n_components:int = 10):
         nmf = NMF(n_components=n_components, random_state=SEED)
@@ -167,7 +168,6 @@ class DocumentData():
         https://dl.acm.org/doi/pdf/10.3115/1117729.1117730
         We use it not to compare two documents, but selected documents to unselected documents.
         Used smoothing (added one everywhere), to prevent division by zero
-        #todo vectorize
         """
 
         if selected_documents is None:
