@@ -196,9 +196,12 @@ class MainWindow(QMainWindow):
     def open_file_action(self, name:str):
         self.loaded_file = name
         self.status_bar.showMessage(f"Loading data {name}")
-        self.central_widget.reload_data(name, dimred_solver=self.dimred_literals[self.dimred_combo.currentIndex()], 
-                                        topic_solver=self.topic_literals[self.topic_combo.currentIndex()], 
-                                        n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
+        # self.central_widget.reload_data(name, dimred_solver=self.dimred_literals[self.dimred_combo.currentIndex()],
+        #                                 topic_solver=self.topic_literals[self.topic_combo.currentIndex()],
+        #                                 n_components=self.num_topics_spinbox.value(), num_topic_words=self.num_topic_words_spinbox.value())
+        self.central_widget.reload_data(name, dimred_solver=self.dimred_literals[self.dimred_combo.currentIndex()],
+                                        topic_solver=self.topic_literals[self.topic_combo.currentIndex()],
+                                        n_components=self.num_topics_spinbox.value(), num_topic_words=0)
         self.central_widget.generateTable()
         self.status_bar.showMessage(f"Data {name} loaded and plotted")
         self.setWindowTitle(f'Document Corpus Visualization - dataset: {name}')
@@ -220,9 +223,9 @@ class MainWindow(QMainWindow):
         self.central_widget.generateTable()
         self.status_bar.showMessage(f"Topics computed for {value} topics")
 
-    def topic_num_topic_words_action(self, value:int):
-        self.central_widget.reload_num_topic_words(num_topic_words=value)
-        self.status_bar.showMessage(f"Topic words recomputed for {value} topic words")
+    # def topic_num_topic_words_action(self, value:int):
+    #     self.central_widget.reload_num_topic_words(num_topic_words=value)
+    #     self.status_bar.showMessage(f"Topic words recomputed for {value} topic words")
 
     def init_menu(self):
         #menu
@@ -286,16 +289,16 @@ class MainWindow(QMainWindow):
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.num_topics_spinbox_label)
 
-        #spinbox for number of topic words
-        self.num_topic_words_spinbox_label = LabeledWidget("Number of Topic Words", QSpinBox())
-        self.num_topic_words_spinbox = self.num_topic_words_spinbox_label.widget
-        self.num_topic_words_spinbox.setAccessibleName("Number of Topic Words")
-        self.num_topic_words_spinbox.setMinimum(1)
-        self.num_topic_words_spinbox.setMaximum(10)
-        self.num_topic_words_spinbox.setValue(5)
-        self.num_topic_words_spinbox.valueChanged.connect(self.topic_num_topic_words_action)
-        self.toolbar.addSeparator()
-        self.toolbar.addWidget(self.num_topic_words_spinbox_label)
+        # #spinbox for number of topic words
+        # self.num_topic_words_spinbox_label = LabeledWidget("Number of Topic Words", QSpinBox())
+        # self.num_topic_words_spinbox = self.num_topic_words_spinbox_label.widget
+        # self.num_topic_words_spinbox.setAccessibleName("Number of Topic Words")
+        # self.num_topic_words_spinbox.setMinimum(1)
+        # self.num_topic_words_spinbox.setMaximum(10)
+        # self.num_topic_words_spinbox.setValue(5)
+        # self.num_topic_words_spinbox.valueChanged.connect(self.topic_num_topic_words_action)
+        # self.toolbar.addSeparator()
+        # self.toolbar.addWidget(self.num_topic_words_spinbox_label)
 
         
 
