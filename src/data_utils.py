@@ -26,6 +26,8 @@ class DocumentData():
         #self.document_words_sum = self._number_of_words_per_doc(self.doc_words_matrix)
         self.tfidf_matrix = TfidfTransformer().fit_transform(self.doc_words_matrix)
         self.selected_documents = []
+        self.doc_topics = None
+        self.topics_method = None
 
     def fit_transform(self, solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]]):
         """
@@ -69,6 +71,11 @@ class DocumentData():
                 topics = np.load(f"./precomputed/{self.name}_nmf_{n_components}_topics.npy")
             except:
                 doc_topics, topics = self._nmf(n_components=n_components)
+                np.save(f"./precomputed/{self.name}_nmf_{n_components}_doc_topics.npy", doc_topics)
+                np.save(f"./precomputed/{self.name}_nmf_{n_components}_topics.npy", topics)
+            self.doc_topics = doc_topics
+            self.topics = topics
+            self.topics_method = solver
             return doc_topics, topics
         elif solver == "lda":
             try:
@@ -79,7 +86,9 @@ class DocumentData():
                 np.save(f"./precomputed/{self.name}_lda_{n_components}_doc_topics.npy", doc_topics)
                 np.save(f"./precomputed/{self.name}_lda_{n_components}_topics.npy", topics)
 
-
+            self.doc_topics = doc_topics
+            self.topics = topics
+            self.topics_method = solver
             return doc_topics, topics
         else:
             raise ValueError("Invalid solver")
@@ -140,7 +149,7 @@ class DocumentData():
 
         return topics, lda.components_
 
-    def get_topics_words(self, topic_words_matrix, n:int = 5) -> List[List[str]]:
+    def get_topics_words(self, topic_words_matrix, n:int = 100) -> List[List[str]]:
         """
         Get the top n words for each topic which are the most representative
         """
