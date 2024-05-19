@@ -21,8 +21,12 @@ class DocumentData():
         self.docword_path = os.path.join(data_path, f"docword.{self.name}.txt")
         self.vocabulary = self._load_vocabulary()
         self.doc_words_matrix = self._load_docwords()
+        self.total_term_counts = self._total_term_counts(self.doc_words_matrix)
+        self.sum_word_counts = np.sum(self.total_term_counts)
+        #self.document_words_sum = self._number_of_words_per_doc(self.doc_words_matrix)
         self.tfidf_matrix = TfidfTransformer().fit_transform(self.doc_words_matrix)
-        
+        self.selected_documents = []
+
     def fit_transform(self, solver: Union[Literal["pca"], Literal["umap"], Literal["tsne"]]):
         """
         Fit and transform the data using the specified solver
@@ -136,4 +140,40 @@ class DocumentData():
             words = [self.vocabulary[word_id] for word_id in ind]
             topics_words.append(words)
 
-        return topics_words 
+        return topics_words
+
+    def _total_term_counts(self, doc_words):
+        return np.sum(doc_words, axis=0)
+
+    def _number_of_words_per_doc(self, doc_words):
+        return np.sum(doc_words, axis=1)
+
+    def compute_g2(self, selected_documents = None):
+        """
+        https://dl.acm.org/doi/pdf/10.3115/1117729.1117730
+        We use it not to compare two documents, but selected documents to unselected documents.
+        Used smoothing (added one everywhere), to prevent division by zero
+        #todo vectorize
+        """
+
+        if selected_documents is None:
+            selected_documents = self.selected_documents
+
+        unselected_documents_mask = np.ones(self.doc_words_matrix.shape[0], dtype=bool)
+        unselected_documents_mask[selected_documents] = False
+
+
+
+        term_counts_selected = self._total_term_counts(self.doc_words_matrix[selected_documents])
+        term_counts_unselected = self._total_term_counts(self.doc_words_matrix[unselected_documents_mask])
+        total_words_selected = np.sum(term_counts_selected)
+        total_words_unselected = np.sum(term_counts_unselected)
+
+        log_likelihoods = np.empty((self.doc_words_matrix.shape[1]))
+        for word in range(self.doc_words_matrix.shape[1]):
+            expected_value_selected = (self.total_term_counts[word] * total_words_selected +1)/self.sum_word_counts
+            expected_value_unselected = (self.total_term_counts[word] * total_words_unselected +1)/self.sum_word_counts
+            log_likelihoods[word] = 2* (term_counts_selected[word] * np.log((term_counts_selected[word]+1)/expected_value_selected) +
+                                term_counts_unselected[word] * np.log((term_counts_unselected[word]+1) / expected_value_unselected))
+
+        return log_likelihoods

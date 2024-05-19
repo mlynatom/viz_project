@@ -6,12 +6,14 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout, QLabel, QGraphicsScene, \
     QGraphicsEllipseItem, QTextEdit, QGraphicsView, QGraphicsTextItem
 from src.doc_landscape import VisGraphicsView
+from src.data_utils import DocumentData
 
 class WordCloudWindow(QWidget):
-    def __init__(self):
+    def __init__(self, document_data: DocumentData):
         super().__init__()
 
         #Set it as window
+        self.document_data = document_data
         self.setWindowTitle("Wordcloud Window")
 
         self.setFixedSize(900, 700)
@@ -54,6 +56,10 @@ class WordCloudWindow(QWidget):
         word.setDefaultTextColor(Qt.magenta)
         word.setPos(0,0)
         self.scene.addItem(word)
+
+        # print(document_data.selected_documents)
+        # print()
+        # print(document_data.compute_g2())
 
 
 

@@ -68,6 +68,7 @@ class CentralWidget(QWidget):
     def reload_data(self, name:str ="kos", dimred_solver:Union[Literal["pca"], Literal["umap"], Literal["tsne"]]="pca", topic_solver: Union[Literal["nmf"], Literal["lda"]] = "nmf",n_components:int = 10, num_topic_words: int = 5):
         #load all data
         self.document = DocumentData(data_path="data/bag+of+words", name=name)
+        self.table_view.document_data = self.document
         self.document_coords = self.document.fit_transform(dimred_solver)
         self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components)
         self.topics = self.document.get_topics_words(self.topics_all, n=num_topic_words)
@@ -101,6 +102,7 @@ class CentralWidget(QWidget):
        
         #obtain selected documents from the scene + sort them
         selected_docs = sorted(self.scene.selected_docs, reverse=True)
+        self.document.selected_documents = selected_docs
 
         #global idx
         idx = 0
