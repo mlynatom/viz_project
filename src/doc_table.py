@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
 from src.data_utils import DocumentData
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.wordcloud import WordCloudWindow
+from src.data_utils import DocumentData
 
 class TableView(QWidget):
     def __init__(self):
@@ -43,5 +44,5 @@ class TableView(QWidget):
         self.setLayout(self.main_layout)
 
     def open_new_window(self):
-        self.new_window = WordCloudWindow()
+        self.new_window = WordCloudWindow(self.document_data)
         self.new_window.show()
