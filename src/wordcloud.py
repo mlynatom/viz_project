@@ -1,10 +1,8 @@
-import random
-
 import numpy as np
 from PySide6.QtCore import QRectF
-from PySide6.QtGui import Qt, QBrush, QSurfaceFormat, QFont
+from PySide6.QtGui import Qt, QBrush, QFont
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsScene, \
-    QGraphicsView, QGraphicsTextItem, QHBoxLayout, QPushButton, QFrame, QSizePolicy
+    QGraphicsView, QGraphicsTextItem, QHBoxLayout, QPushButton
 
 from src.data_utils import DocumentData
 
@@ -19,17 +17,16 @@ def normalise(array):
 
 
 class WordCloudWindow(QWidget):
-    def __init__(self, document_data: DocumentData, use_topic = False):
+    def __init__(self, document_data: DocumentData):
         super().__init__()
+        self.document_data = document_data
+        self.generated_topic_wordcloud = False
 
         # Set it as window
-        self.document_data = document_data
         self.setWindowTitle("Wordcloud Window")
+        self.setFixedSize(1000, 700)
 
-        self.setFixedSize(1200, 700)
-
-        # set widget
-        self.generated_topic_wordcloud = False
+        # set menu with Buttons
         self.menu = QHBoxLayout()
         self.pushed_styledheet = "background-color: gray; border: none; "
         self.selection_wordcloud_button = QPushButton("Generate wordcloud from selected documents")
@@ -37,60 +34,58 @@ class WordCloudWindow(QWidget):
         self.selection_wordcloud_button.clicked.connect(self.generate_selection_wordcloud)
         self.topic_wordcloud_button = QPushButton("Generate wordcloud from topic words")
         self.topic_wordcloud_button.clicked.connect(self.generate_topic_wordcloud)
-
-        separator = QFrame()
-        separator.setFrameShape(QFrame.VLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        separator.setLineWidth(1)
-        separator.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # separator = QFrame()
+        # separator.setFrameShape(QFrame.VLine)
+        # separator.setFrameShadow(QFrame.Sunken)
+        # separator.setLineWidth(1)
+        # separator.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         # self.menu.addWidget(separator)
         self.menu.addWidget(self.selection_wordcloud_button)
         # self.menu.addWidget(separator)
         self.menu.addWidget(self.topic_wordcloud_button)
         # self.menu.addWidget(separator)
 
+        # Set the wordcloud scene
         self.scene = QGraphicsScene()
         self.scene.setSceneRect(QRectF(0, 0, 800, 600))  # Set the desired width and height
         self.view = QGraphicsView()
+        self.view.setBackgroundBrush(QBrush(Qt.white))
         self.view.setGeometry(0, 0, 800, 600)
         self.view.setScene(self.scene)
-        # self.scene.selectionChanged.connect(self.generateTable)  # connect selection change to table update
+        self._generate_words_from_g2()
 
-        format = QSurfaceFormat()
-        format.setSamples(4)
-
-        self.view.setBackgroundBrush(QBrush(Qt.white))
-
-
-
-
-
-
-
-
-
-
-
-
-        if not use_topic:
-            self._generate_words_from_g2()
-        else:
-            self._generate_words_from_topic()
-
+        # Set status bar
         self.status_bar = QHBoxLayout()
-        label1 = QLabel('Worlcloud generated from selected documents!', self)
+        self.status_bar_widget = QWidget()
+        self.status_bar_widget.setLayout(self.status_bar)
+        self.text1 = ("\tThe Wordcloud was generated from the selected document "
+                 "using the g2 algorithm. It compares selected and unselected documents.\n\t\t\t\tThe colors of words "
+                 "corresponds with the topic it belongs to the most.")
+        self.text2 = (f"\tThe Wordcloud was generated from words describing the prevalent topic among selected document "
+                 f"(or the whole corpus). \n\t  Topics where determined by selected {self.document_data.topics_method} algorithm."
+                 "The words of different color are stronger connected to different topic.")
+        self.label1 = QLabel(self.text1)
         # Set the position and size of the label
-        label1.setGeometry(25, 25, 150, 40)
-        #todo nothing was selected label
-        #todo write the method label
-        #todo write the color label
-        self.status_bar.addWidget(label1)
+        self.label1.setGeometry(25, 25, 150, 40)
+        font = QFont("Arial", 10)
+        self.label1.setFont(font)
+        self.status_bar_widget.setStyleSheet("""
+                    QWidget {
+                        background-color: #606060; /* Light grey background */
+                    }
+                    QLabel {
+                        color: #f0f0f0; /* Dark grey text color */
+                    }
+                """)
+
+        self.status_bar.addWidget(self.label1)
+        self.status_bar.setAlignment(Qt.AlignCenter)
 
         # set the layout to the widget
         self.layout = QVBoxLayout()
+        self.layout.addWidget(self.status_bar_widget)
         self.layout.addLayout(self.menu)
         self.layout.addWidget(self.view)
-        self.layout.addLayout(self.status_bar)
         self.setLayout(self.layout)
 
     def generate_selection_wordcloud(self):
@@ -98,6 +93,7 @@ class WordCloudWindow(QWidget):
             self.generated_topic_wordcloud = False
             self.selection_wordcloud_button.setStyleSheet(self.pushed_styledheet)
             self.topic_wordcloud_button.setStyleSheet("")
+            self.label1.setText(self.text1)
             self._generate_words_from_g2()
 
     def generate_topic_wordcloud(self):
@@ -105,8 +101,8 @@ class WordCloudWindow(QWidget):
             self.generated_topic_wordcloud = True
             self.topic_wordcloud_button.setStyleSheet(self.pushed_styledheet)
             self.selection_wordcloud_button.setStyleSheet("")
+            self.label1.setText(self.text2)
             self._generate_words_from_topic()
-
 
     def _get_text_item(self, idx, font_size):
         text = self.document_data.vocabulary[idx]
@@ -134,10 +130,9 @@ class WordCloudWindow(QWidget):
         topics = self.document_data.topics
         selected_documents = self.document_data.selected_documents
         if not selected_documents:
-            selected_topic = 0
-        else:
-            counts = np.bincount(topics_of_documents[selected_documents])
-            selected_topic = np.argmax(counts)
+            selected_documents = np.arange(self.document_data.n_docs, dtype=int)
+        counts = np.bincount(topics_of_documents[selected_documents])
+        selected_topic = np.argmax(counts)
         sizes = normalise(topics[selected_topic])
         sorted_words = np.flip(np.argsort(sizes))
         self._generate_words(sorted_words, sizes)
@@ -172,6 +167,3 @@ class WordCloudWindow(QWidget):
             else:
                 break
             self.scene.addItem(item)
-
-
-
