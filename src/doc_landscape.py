@@ -1,35 +1,38 @@
 import math
 
 import numpy as np
-from PySide6.QtCore import QRectF, QSize, Qt, Signal, QObject
-from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
-                           QPen, QSurfaceFormat, QTransform,QFont)
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QGraphicsEllipseItem,
+from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtGui import (QColor, QPainter,
+                           QPen, QTransform, QFont)
+from PySide6.QtWidgets import (QGraphicsEllipseItem,
                                QGraphicsItem, QGraphicsScene, QGraphicsView,
-                               QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-                               QSizePolicy, QWidget, QLabel, QGraphicsTextItem)
+                               QGraphicsTextItem)
+
 
 class Compass(QGraphicsEllipseItem, QObject):
-    #define signal for position change
+    # define signal for position change
     positionChanged = Signal()
 
     def __init__(self, *args, **kwargs) -> None:
         QGraphicsEllipseItem.__init__(self, *args, **kwargs)
         QObject.__init__(self)
-    
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
-            self.positionChanged.emit() #emit signal when position changes
+            self.positionChanged.emit()  # emit signal when position changes
 
         return super().itemChange(change, value)
-    
+
+
 class DocumentEllipse(QGraphicsEllipseItem):
-    def __init__(self, x, y, w, h, pen, brush, id:str) -> None:
-        super(DocumentEllipse, self).__init__(x,y,w,h)
-        self.setPen(pen)
+    def __init__(self, x, y, w, h, brush, id: str) -> None:
+        super(DocumentEllipse, self).__init__(x, y, w, h)
+        self.pen_unselected = QPen(Qt.black, 0.5)
+        self.pen_selected = QPen(Qt.red, 0.5)
+        self.setPen(self.pen_unselected)
         self.setBrush(brush)
         self.id = id
+        self.selected = False
 
         # Enable hover events
         self.setAcceptHoverEvents(True)
@@ -44,17 +47,19 @@ class DocumentEllipse(QGraphicsEllipseItem):
 
         self.label.setDefaultTextColor(Qt.black)
         self.label.setVisible(False)
-        
+
         label_height = self.label.boundingRect().height()
         label_x = self.rect().right()
         label_y = self.rect().top()
-        self.label.setPos(label_x, label_y - label_height/2)
-
-        
+        self.label.setPos(label_x, label_y - label_height / 2)
 
     def mousePressEvent(self, event):
         self.label_clicked = not self.label_clicked
-        self.label.setVisible(self.label_clicked)
+        if not self.selected:
+            self.selectionHandler()
+        else:
+            self.unselectionHandler()
+
         super().mousePressEvent(event)
 
     def hoverEnterEvent(self, event):
@@ -67,50 +72,78 @@ class DocumentEllipse(QGraphicsEllipseItem):
         super().hoverLeaveEvent(event)
 
     def compassOver(self):
-        self.label.setVisible(True)
         self.compass_over = True
+        self.selectionHandler()
 
     def compassNotOver(self):
         self.compass_over = False
+        self.unselectionHandler()
+
+    def selectionHandler(self):
+        self.selected = True
+        self.setSelected(True)
+        self.setPen(self.pen_selected)
+        self.label.setVisible(True)
+
+    def unselectionHandler(self):
+        self.selected = False
+        self.setSelected(False)
+        self.setPen(self.pen_unselected)
         self.label.setVisible(False)
 
 
-
 class VisGraphicsScene(QGraphicsScene):
-    #define signal for selection change
+    # define signal for selection change
     selectionChanged = Signal()
+
 
     def __init__(self):
         super(VisGraphicsScene, self).__init__()
-        self.selection = None
         self.wasDragg = False
-        self.pen_docs = QPen(Qt.black, 0.5)
-        self.pen_docs_selected = QPen(Qt.red,0.5)
         self.pen_compass = QPen(Qt.black, 2)
         self.compass = None
-        self.selected_docs = [] #store selected documents
-        self.elipse2id = {} #store mapping from elipse to document id
+        self.selected_docs = []  # store selected documents
+        self.elipse2id = {}  # store mapping from elipse to document id
+        self.ctrl_pressed = False
 
-    def mouseReleaseEvent(self, event): 
-        if(self.wasDragg):
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Control:
+            self.ctrl_pressed = True
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key.Key_Control:
+            self.ctrl_pressed = False
+        super().keyReleaseEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if (self.wasDragg):
             return
-        if(self.selection and self.selection is not self.compass):
-            self.selection.setPen(self.pen_docs)
 
-        #check what was clicked
+        # check what was clicked
         item = self.itemAt(event.scenePos(), QTransform())
         if item is self.compass:
             pass
             # print("Compass clicked")
         elif isinstance(item, DocumentEllipse):
-            item.setPen(self.pen_docs_selected)
-            self.selection = item
+            if self.elipse2id.get(item) in self.selected_docs:
+                self.selected_docs.remove(self.elipse2id.get(item))
+                self.selectionChanged.emit()
+            else:
+                if not self.ctrl_pressed:
+                    for elipseid in self.selected_docs:
+                        self.doc_elipses[elipseid].unselectionHandler()
+                    self.selected_docs = [self.elipse2id.get(item)]
+                else:
+                    self.selected_docs.append(self.elipse2id.get(item))
+                item.selectionHandler()
+                self.selectionChanged.emit()
         else:
             pass
-            
 
     def generateAndMapData(self, document_coords, doc_topic, brush):
-        #remap the results to the screen
+        # remap the results to the screen
         x = document_coords[:, 0]
         y = document_coords[:, 1]
         x_min = np.min(x)
@@ -121,27 +154,27 @@ class VisGraphicsScene(QGraphicsScene):
         x_min_max_scaled = (x - x_min) / (x_max - x_min)
         y_min_max_scaled = (y - y_min) / (y_max - y_min)
 
-        #rescale minmaxed to the screen TODO better alignment with the space!
+        # rescale minmaxed to the screen TODO better alignment with the space!
         width = 800
         height = 600
         x = x_min_max_scaled * width
         y = y_min_max_scaled * height
-        c = doc_topic #get colors
+        c = doc_topic  # get colors
 
-        #Map data to graphical elements
+        # Map data to graphical elements
         self.doc_elipses = []
         for i in range(0, x.shape[0]):
             d = 3
-            ellipse = DocumentEllipse(x[i], y[i], d,d, self.pen_docs, brush[c[i]], str(i))
+            ellipse = DocumentEllipse(x[i], y[i], d, d, brush[c[i]], str(i))
             # ellipse = self.addEllipse(x[i], y[i], d,d, self.pen_docs, brush[c[i]])
             self.addItem(ellipse)
             self.elipse2id[ellipse] = i
+            self.doc_elipses.append(ellipse)
 
-        #TODO add the compass (ellipse with transparent background)
         self.init_compass(width, height)
 
     def get_ellipses_ids_inside_compass(self):
-        #print("Compass moved", self.compass.scenePos())
+        # print("Compass moved", self.compass.scenePos())
         ellipses_inside_area = []
         target_rect = self.compass.sceneBoundingRect()
 
@@ -151,27 +184,27 @@ class VisGraphicsScene(QGraphicsScene):
                 if target_rect.contains(item_rect):
                     item.compassOver()
                     ellipses_inside_area.append(self.elipse2id[item])
-                else:
+                elif not self.ctrl_pressed:
                     item.compassNotOver()
 
         if ellipses_inside_area != self.selected_docs:
-            self.selected_docs = ellipses_inside_area
+            if not self.ctrl_pressed:
+                self.selected_docs = ellipses_inside_area
+            else:
+                for item in ellipses_inside_area:
+                    if item not in self.selected_docs:
+                        self.selected_docs.append(item)
+                        self.doc_elipses[item].selectionHandler()
             self.selectionChanged.emit()
-
-            
-        
-
-
     def init_compass(self, w, h):
-        self.compass = Compass(0,0,50,50)
-        self.compass.setPos(w/2, h/2)
+        self.compass = Compass(0, 0, 50, 50)
+        self.compass.setPos(w / 2, h / 2)
         self.compass.setBrush(QColor(0, 0, 0, 0))
         self.compass.setPen(self.pen_compass)
-        self.compass.setFlag(QGraphicsEllipseItem.ItemIsMovable, True) #set that this item can be moved
+        self.compass.setFlag(QGraphicsEllipseItem.ItemIsMovable, True)  # set that this item can be moved
         self.compass.setFlag(QGraphicsEllipseItem.ItemSendsGeometryChanges, True)
         self.compass.positionChanged.connect(self.get_ellipses_ids_inside_compass)
         self.addItem(self.compass)
-            
 
 
 class VisGraphicsView(QGraphicsView):
@@ -189,9 +222,9 @@ class VisGraphicsView(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
 
     def wheelEvent(self, event):
-        zoom = 1 + event.angleDelta().y()*0.001;
+        zoom = 1 + event.angleDelta().y() * 0.001;
         self.scale(zoom, zoom)
-        
+
     def mousePressEvent(self, event):
         self.startX = event.position().x()
         self.startY = event.position().y()
@@ -205,8 +238,8 @@ class VisGraphicsView(QGraphicsView):
         endY = event.position().y()
         deltaX = endX - self.startX
         deltaY = endY - self.startY
-        distance = math.sqrt(deltaX*deltaX + deltaY*deltaY)
-        if(distance > 5):
+        distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
+        if (distance > 5):
             self.myScene.wasDragg = True
 
         super().mouseReleaseEvent(event)

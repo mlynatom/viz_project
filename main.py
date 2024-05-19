@@ -89,7 +89,6 @@ class CentralWidget(QWidget):
 
     def reload_scene(self):
         self.scene.clear()
-        self.scene.selection = None
         self.scene.wasDragg = False
         self.scene.generateAndMapData(self.document_coords, self.doc_topic, self.brush)
 
