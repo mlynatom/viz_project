@@ -143,8 +143,6 @@ class WordCloudWindow(QWidget):
         self._generate_words(sorted_words, sizes)
 
     def _generate_words(self, sorted_words, sizes):
-        print(sorted_words)
-        print(sizes[sorted_words])
         self.scene.clear()
         max_width = self.scene.width()
         max_height = self.scene.height()
