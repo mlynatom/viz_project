@@ -62,7 +62,7 @@ class WordCloudWindow(QWidget):
                  "using the g2 algorithm. It compares selected and unselected documents.\n\t\t\t\tThe colors of words "
                  "corresponds with the topic it belongs to the most.")
         self.text2 = (f"\tThe Wordcloud was generated from words describing the prevalent topic among selected document "
-                 f"(or the whole corpus). \n\t  Topics where determined by selected {self.document_data.topics_method} algorithm."
+                 f"(or the whole corpus). \n\t  Topics were determined by selected {self.document_data.topics_method} algorithm."
                  "The words of different color are stronger connected to different topic.")
         self.label1 = QLabel(self.text1)
         # Set the position and size of the label
@@ -106,7 +106,7 @@ class WordCloudWindow(QWidget):
 
     def _get_text_item(self, idx, font_size):
         text = self.document_data.vocabulary[idx]
-        best_topic = self.document_data.get_words_best_topic(idx, self.document_data.topics_all)
+        best_topic = self.document_data.get_words_best_topic(idx)
         color = self.document_data.brush[best_topic].color()
         # Create a QGraphicsTextItem
         text_item = QGraphicsTextItem(text + " ")
@@ -131,6 +131,7 @@ class WordCloudWindow(QWidget):
         selected_documents = self.document_data.selected_documents
         if not selected_documents:
             selected_documents = np.arange(self.document_data.n_docs, dtype=int)
+
         counts = np.bincount(topics_of_documents[selected_documents])
         selected_topic = np.argmax(counts)
         sizes = normalise(topics[selected_topic])

@@ -77,7 +77,6 @@ class DocumentData():
             self.doc_topics = doc_topics
             self.topics = topics
             self.topics_method = solver
-            return doc_topics, topics
         elif solver == "lda":
             try:
                 doc_topics = np.load(f"./precomputed/{self.name}_lda_{n_components}_doc_topics.npy")
@@ -90,7 +89,6 @@ class DocumentData():
             self.doc_topics = doc_topics
             self.topics = topics
             self.topics_method = solver
-            return doc_topics, topics
         else:
             raise ValueError("Invalid solver")
 
@@ -164,8 +162,8 @@ class DocumentData():
 
         return topics_words
 
-    def get_words_best_topic(self, words_idx, topic_words_matrix) -> int:
-        return np.argmax(topic_words_matrix[:, words_idx])
+    def get_words_best_topic(self, words_idx) -> int:
+        return np.argmax(self.topics[:, words_idx])
 
     def _total_term_counts(self, doc_words):
         return np.sum(doc_words, axis=0)

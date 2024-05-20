@@ -90,27 +90,27 @@ class CentralWidget(QWidget):
         self.document.brush = self.brush
         self.table_view.document_data = self.document
         self.document_coords = self.document.fit_transform(dimred_solver)
-        self.doc_topic, self.topics_all = self.document.fit_topics(solver=topic_solver, n_components=n_components)
+        self.document.fit_topics(solver=topic_solver, n_components=n_components)
         # self.topics = self.document.get_topics_words(self.topics_all)
         # self.document.topic_words = self.topics
-        self.document.doc_topic = self.doc_topic
-        self.document.topics_all = self.topics_all
+        # self.document.doc_topic = self.doc_topic
+        # self.document.topics_all = self.topics_all
         # add data
         self.reload_scene()
 
     def reload_topics(self, topic_solver: Union[Literal["nmf"], Literal["lda"]] = 'nmf', n_components: int = 10,
                          num_topic_words: int = 5):
-        self.doc_topic, self.topics_all = self.document.fit_topics(topic_solver, n_components=n_components)
+        self.document.fit_topics(topic_solver, n_components=n_components)
         # self.topics = self.document.get_topics_words(self.topics_all)
         # self.document.topic_words = self.topics
-        self.document.doc_topic = self.doc_topic
-        self.document.topics_all = self.topics_all
+        # self.document.doc_topic = self.doc_topic
+        # self.document.topics_all = self.topics_all
         self.reload_scene()
 
     def reload_scene(self):
         self.scene.clear()
         self.scene.wasDragg = False
-        self.scene.generateAndMapData(self.document_coords, self.doc_topic, self.brush)
+        self.scene.generateAndMapData(self.document_coords, self.document.doc_topics, self.brush)
 
     def reload_num_topic_words(self, num_topic_words: int = 5):
         pass
@@ -119,7 +119,7 @@ class CentralWidget(QWidget):
 
     def generateTable(self):
         self.table.clear()
-        self.table.setRowCount(self.doc_topic.shape[0])
+        self.table.setRowCount(self.document.doc_topics.shape[0])
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["Doc ID", "Topic ID", "Topic Colour"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -135,9 +135,9 @@ class CentralWidget(QWidget):
         for doc_id in selected_docs:
             # self.table.insertRow(0) #insert at the beginning
             item_id = QTableWidgetItem(str(doc_id))
-            item_topic_id = QTableWidgetItem(str(self.doc_topic[doc_id]))
+            item_topic_id = QTableWidgetItem(str(self.document.doc_topics[doc_id]))
             item_topic_colour = QTableWidgetItem()
-            item_topic_colour.setBackground(self.brush[self.doc_topic[doc_id]])
+            item_topic_colour.setBackground(self.brush[self.document.doc_topics[doc_id]])
             self.table.setItem(idx, 0, item_id)
             self.table.setItem(idx, 1, item_topic_id)
             self.table.setItem(idx, 2, item_topic_colour)
@@ -145,7 +145,7 @@ class CentralWidget(QWidget):
             idx += 1
 
         # then add the rest of the documents
-        for i, topic in enumerate(self.doc_topic):
+        for i, topic in enumerate(self.document.doc_topics):
             if i in selected_docs:
                 continue
             item_id = QTableWidgetItem(str(i))

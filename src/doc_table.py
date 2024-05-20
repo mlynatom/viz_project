@@ -48,6 +48,8 @@ class TableView(QWidget):
 
         self.setLayout(self.main_layout)
 
+        self.document_data = None
+
 
     def open_selection_wordcloud(self):
         self.new_window = WordCloudWindow(self.document_data)
