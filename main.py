@@ -126,7 +126,7 @@ class CentralWidget(QWidget):
         self.table.verticalHeader().setVisible(False)
 
         # obtain selected documents from the scene + sort them
-        selected_docs = sorted(self.scene.selected_docs, reverse=True)
+        selected_docs = sorted(self.scene.selected_docs, reverse=False)
         self.document.selected_documents = selected_docs
 
         # global idx
