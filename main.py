@@ -141,7 +141,6 @@ class CentralWidget(QWidget):
             self.table.setItem(idx, 0, item_id)
             self.table.setItem(idx, 1, item_topic_id)
             self.table.setItem(idx, 2, item_topic_colour)
-            # TODO link cell double_clicked to the wordclouds
             idx += 1
 
         # then add the rest of the documents
@@ -155,7 +154,6 @@ class CentralWidget(QWidget):
             self.table.setItem(idx, 0, item_id)
             self.table.setItem(idx, 1, item_topic_id)
             self.table.setItem(idx, 2, item_topic_colour)
-            # TODO link cell double_clicked to the wordclouds
             idx += 1
 
         # highlight the selected rows
@@ -163,7 +161,6 @@ class CentralWidget(QWidget):
             for row in range(len(selected_docs)):
                 self.table.item(row, col).setSelected(True)
 
-        # TODO sorting by compass
         # self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
 
         self.table.resizeColumnsToContents()
