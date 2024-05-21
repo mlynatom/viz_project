@@ -67,7 +67,7 @@ class DocumentEllipse(QGraphicsEllipseItem):
         super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event):
-        if not self.label_clicked and not self.compass_over:
+        if not self.selected:
             self.label.setVisible(False)
         super().hoverLeaveEvent(event)
 
@@ -122,6 +122,7 @@ class VisGraphicsScene(QGraphicsScene):
         elif isinstance(item, DocumentEllipse):
             if self.elipse2id.get(item) in self.selected_docs:
                 self.selected_docs.remove(self.elipse2id.get(item))
+                item.unselectionHandler()
                 self.selectionChanged.emit()
             else:
                 if not self.global_event.ctrl_pressed:
