@@ -1,20 +1,9 @@
-import sys
-from typing import Literal, Union
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QPushButton, QSizePolicy, QTableWidget,
+                               QVBoxLayout, QWidget)
 
-import numpy as np
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QPainter,
-                           QPen, QSurfaceFormat, QTransform)
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsScene,
-                               QGraphicsView, QHBoxLayout, QHeaderView, QLabel,
-                               QMainWindow, QMenuBar, QSizePolicy, QSpinBox,
-                               QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton)
-
-from src.data_utils import DocumentData
-from src.doc_landscape import VisGraphicsScene, VisGraphicsView
 from src.wordcloud import WordCloudWindow
-from src.data_utils import DocumentData
+
 
 class TableView(QWidget):
     def __init__(self):

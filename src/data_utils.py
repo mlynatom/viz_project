@@ -2,11 +2,10 @@ import os
 from typing import List, Literal, Union
 
 import numpy as np
-from sklearn.decomposition import NMF
-from sklearn.decomposition import PCA  # TODO write own
-from sklearn.manifold import TSNE
+from sklearn.decomposition import NMF, LatentDirichletAllocation
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.decomposition import LatentDirichletAllocation
+# from sklearn.decomposition import PCA  # TODO write own
+from sklearn.manifold import TSNE
 from umap import UMAP
 
 SEED = 42

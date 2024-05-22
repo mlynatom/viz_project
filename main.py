@@ -1,12 +1,14 @@
 import sys
 from typing import Literal, Union
 
-from PySide6.QtCore import Qt, QObject, QEvent
-from PySide6.QtGui import (QAction, QBrush, QColor, QKeySequence, QSurfaceFormat, QKeyEvent)
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtGui import (QAction, QBrush, QColor, QKeyEvent, QKeySequence,
+                           QSurfaceFormat)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QHeaderView, QLabel,
-                               QMainWindow, QSizePolicy, QSpinBox,
-                               QWidget, QTableWidget, QTableWidgetItem)
+from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout,
+                               QHeaderView, QLabel, QMainWindow, QSizePolicy,
+                               QSpinBox, QTableWidget, QTableWidgetItem,
+                               QWidget)
 
 from src.data_utils import DocumentData
 from src.doc_landscape import VisGraphicsScene, VisGraphicsView

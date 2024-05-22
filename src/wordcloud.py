@@ -1,8 +1,9 @@
 import numpy as np
 from PySide6.QtCore import QRectF
-from PySide6.QtGui import Qt, QBrush, QFont
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsScene, \
-    QGraphicsView, QGraphicsTextItem, QHBoxLayout, QPushButton
+from PySide6.QtGui import QBrush, QFont, Qt
+from PySide6.QtWidgets import (QGraphicsScene, QGraphicsTextItem,
+                               QGraphicsView, QHBoxLayout, QLabel, QPushButton,
+                               QVBoxLayout, QWidget)
 
 from src.data_utils import DocumentData
 
